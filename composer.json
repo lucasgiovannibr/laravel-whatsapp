@@ -1,12 +1,12 @@
 {
-    "name": "desterroshop/laravel-whatsapp",
+    "name": "lucasgiovanni/laravel-whatsapp",
     "description": "Pacote de integração Laravel com a API WhatsApp",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "DesterroShop",
-            "email": "suporte@desterro.shop"
+            "name": "Lucas Giovanni",
+            "email": "contato@lucasgiovanni.com.br"
         }
     ],
     "require": {
