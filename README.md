@@ -31,7 +31,7 @@ Pacote oficial para integração do Laravel com a API DesterroShop WhatsApp.
 Instale o pacote via Composer:
 
 ```bash
-composer require desterroshop/laravel-whatsapp
+composer require lucasgiovanni/laravel-whatsapp
 ```
 
 O pacote utiliza auto-discovery do Laravel, então o Service Provider será registrado automaticamente.
