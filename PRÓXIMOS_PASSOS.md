@@ -7,7 +7,7 @@ Este documento contém instruções sobre como implementar e configurar a integr
 Execute o comando abaixo para instalar o pacote via Composer:
 
 ```bash
-composer require lucasgiovanni/laravel-whatsapp
+composer require desterroshop/laravel-whatsapp
 ```
 
 ## 2. Publicação dos Arquivos de Configuração

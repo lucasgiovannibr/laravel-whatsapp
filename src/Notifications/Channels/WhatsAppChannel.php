@@ -3,32 +3,27 @@
 namespace DesterroShop\LaravelWhatsApp\Notifications\Channels;
 
 use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
-use DesterroShop\LaravelWhatsApp\Services\TemplateService;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Log;
 
 class WhatsAppChannel
 {
     /**
+     * Cliente WhatsApp
+     *
      * @var WhatsAppClient
      */
     protected $whatsapp;
 
     /**
-     * @var TemplateService
-     */
-    protected $templateService;
-
-    /**
-     * Construtor
+     * Criar uma nova instância do canal de notificação
      *
      * @param WhatsAppClient $whatsapp
-     * @param TemplateService|null $templateService
+     * @return void
      */
-    public function __construct(WhatsAppClient $whatsapp, ?TemplateService $templateService = null)
+    public function __construct(WhatsAppClient $whatsapp)
     {
         $this->whatsapp = $whatsapp;
-        $this->templateService = $templateService ?? app(TemplateService::class);
     }
 
     /**
@@ -36,95 +31,87 @@ class WhatsAppChannel
      *
      * @param mixed $notifiable
      * @param \Illuminate\Notifications\Notification $notification
-     * @return array|null
+     * @return mixed
      */
     public function send($notifiable, Notification $notification)
     {
         if (!method_exists($notification, 'toWhatsApp')) {
-            throw new \RuntimeException('Notification does not have toWhatsApp method');
+            throw new \Exception('Método toWhatsApp não implementado na notificação');
         }
 
-        // Obter dados da notificação
-        $message = $notification->toWhatsApp($notifiable);
+        $to = $this->getRecipientNumber($notifiable);
 
-        // Pular se não tiver destinatário
-        if (empty($message['to'])) {
-            // Tentar obter número do modelo notificável
-            $to = $notifiable->routeNotificationFor('whatsapp', $notification);
-            
-            if (empty($to)) {
-                return null;
-            }
-            
-            $message['to'] = $to;
+        if (empty($to)) {
+            Log::error('WhatsApp: Número do destinatário não encontrado', [
+                'notifiable' => get_class($notifiable)
+            ]);
+            return false;
         }
 
-        // Verificar o tipo de mensagem
-        return $this->sendMessage($message);
+        $data = $notification->toWhatsApp($notifiable);
+        $session = $data['session'] ?? config('whatsapp.default_session');
+
+        // Enviar mensagem baseada no tipo
+        if (isset($data['template'])) {
+            // Enviar como template
+            return $this->sendTemplate($to, $data['template'], $data['data'] ?? [], $session);
+        } elseif (isset($data['message'])) {
+            // Enviar como texto simples
+            return $this->whatsapp->sendText($to, $data['message'], $session);
+        } elseif (isset($data['media'])) {
+            // Enviar como mídia
+            $caption = $data['caption'] ?? null;
+            return $this->whatsapp->sendMedia($to, $data['media'], $data['type'] ?? 'image', $caption, $session);
+        }
+
+        Log::error('WhatsApp: Formato de notificação inválido', [
+            'data' => $data
+        ]);
+
+        return false;
     }
 
     /**
-     * Enviar mensagem baseada no tipo
+     * Obter o número do destinatário
      *
-     * @param array $message
-     * @return array
+     * @param mixed $notifiable
+     * @return string|null
      */
-    protected function sendMessage(array $message): array
+    protected function getRecipientNumber($notifiable)
     {
-        $to = $message['to'];
-        $sessionId = $message['session_id'] ?? null;
-
-        // Determinar o tipo de mensagem e enviar
-        if (isset($message['template'])) {
-            // Enviar template
-            $templateName = $message['template'];
-            $data = $message['data'] ?? [];
-            
-            return $this->whatsapp->sendTemplate($to, $templateName, $data, $sessionId);
-        } elseif (isset($message['image'])) {
-            // Enviar imagem
-            $caption = $message['caption'] ?? null;
-            
-            return $this->whatsapp->sendImage($to, $message['image'], $caption, $sessionId);
-        } elseif (isset($message['audio'])) {
-            // Enviar áudio
-            return $this->whatsapp->sendAudio($to, $message['audio'], $sessionId);
-        } elseif (isset($message['file'])) {
-            // Enviar arquivo
-            $filename = $message['filename'] ?? null;
-            
-            return $this->whatsapp->sendFile($to, $message['file'], $filename, $sessionId);
-        } elseif (isset($message['location'])) {
-            // Enviar localização
-            $location = $message['location'];
-            $title = $message['title'] ?? null;
-            
-            return $this->whatsapp->sendLocation(
-                $to, 
-                $location['latitude'], 
-                $location['longitude'], 
-                $title, 
-                $sessionId
-            );
-        } elseif (isset($message['contact'])) {
-            // Enviar contato
-            return $this->whatsapp->sendContact($to, $message['contact'], $sessionId);
-        } elseif (isset($message['buttons'])) {
-            // Enviar botões
-            $bodyText = $message['body'] ?? '';
-            
-            return $this->whatsapp->sendButtons($to, $bodyText, $message['buttons'], $sessionId);
-        } elseif (isset($message['view'])) {
-            // Renderizar view do Laravel e enviar como texto
-            $data = $message['data'] ?? [];
-            $rendered = View::make($message['view'], $data)->render();
-            
-            return $this->whatsapp->sendText($to, $rendered, $sessionId);
-        } else {
-            // Enviar texto simples
-            $text = $message['text'] ?? $message['message'] ?? '';
-            
-            return $this->whatsapp->sendText($to, $text, $sessionId);
+        if (method_exists($notifiable, 'routeNotificationForWhatsApp')) {
+            return $notifiable->routeNotificationForWhatsApp();
         }
+
+        if (isset($notifiable->phone) && !empty($notifiable->phone)) {
+            return $notifiable->phone;
+        }
+
+        if (isset($notifiable->whatsapp) && !empty($notifiable->whatsapp)) {
+            return $notifiable->whatsapp;
+        }
+
+        if (isset($notifiable->mobile) && !empty($notifiable->mobile)) {
+            return $notifiable->mobile;
+        }
+
+        return null;
+    }
+
+    /**
+     * Enviar mensagem com template
+     *
+     * @param string $to
+     * @param string $template
+     * @param array $data
+     * @param string|null $session
+     * @return mixed
+     */
+    protected function sendTemplate(string $to, string $template, array $data = [], ?string $session = null)
+    {
+        $templateService = app('DesterroShop\LaravelWhatsApp\Services\TemplateService');
+        $message = $templateService->renderTemplate($template, $data);
+
+        return $this->whatsapp->sendText($to, $message, $session);
     }
 } 

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Str;
 
 class WhatsAppService implements WhatsAppClient
 {
@@ -24,6 +25,11 @@ class WhatsAppService implements WhatsAppClient
     /**
      * @var string
      */
+    protected $apiKey;
+
+    /**
+     * @var string
+     */
     protected $defaultSession;
 
     /**
@@ -32,26 +38,369 @@ class WhatsAppService implements WhatsAppClient
     protected $http;
 
     /**
+     * @var string|null
+     */
+    protected $correlationId;
+
+    /**
+     * @var string|null
+     */
+    protected $transactionId;
+
+    /**
      * Construtor
      *
      * @param string $apiUrl URL da API WhatsApp
      * @param string $apiToken Token de autenticação
      * @param string $defaultSession ID da sessão padrão
      */
-    public function __construct(string $apiUrl, string $apiToken, string $defaultSession = 'default')
+    public function __construct(string $apiUrl, string $apiToken = null, string $defaultSession = 'default')
     {
         $this->apiUrl = rtrim($apiUrl, '/');
         $this->apiToken = $apiToken;
+        $this->apiKey = config('whatsapp.api_key');
         $this->defaultSession = $defaultSession;
 
         // Configurar cliente HTTP
         $this->http = Http::baseUrl($this->apiUrl)
-            ->withHeaders([
+            ->timeout(config('whatsapp.request_timeout', 30));
+
+        // Adicionar token se disponível
+        if ($this->apiToken) {
+            $this->http = $this->http->withHeaders([
                 'Authorization' => "Bearer {$this->apiToken}",
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-            ])
-            ->timeout(30);
+            ]);
+        } elseif ($this->apiKey) {
+            $this->http = $this->http->withHeaders([
+                'X-API-Key' => $this->apiKey,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ]);
+        }
+    }
+
+    /**
+     * Autenticar e obter token JWT
+     *
+     * @return array Tokens de autenticação
+     * @throws WhatsAppException
+     */
+    public function authenticate(): array
+    {
+        try {
+            $response = $this->http->post('/api/auth', [
+                'api_key' => $this->apiKey,
+            ]);
+
+            $this->checkResponse($response, 'Erro na autenticação');
+
+            $data = $response->json();
+            $this->apiToken = $data['accessToken'] ?? null;
+
+            // Atualizar o cliente HTTP com o novo token
+            if ($this->apiToken) {
+                $this->http = $this->http->withHeaders([
+                    'Authorization' => "Bearer {$this->apiToken}",
+                ]);
+            }
+
+            return $data;
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro na autenticação');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Renovar o token usando refresh token
+     *
+     * @param string $refreshToken Token de atualização
+     * @return array Novos tokens
+     * @throws WhatsAppException
+     */
+    public function refreshToken(string $refreshToken): array
+    {
+        try {
+            $response = $this->http->post('/api/auth/refresh', [
+                'refresh_token' => $refreshToken,
+            ]);
+
+            $this->checkResponse($response, 'Erro ao renovar token');
+
+            $data = $response->json();
+            $this->apiToken = $data['accessToken'] ?? null;
+
+            // Atualizar o cliente HTTP com o novo token
+            if ($this->apiToken) {
+                $this->http = $this->http->withHeaders([
+                    'Authorization' => "Bearer {$this->apiToken}",
+                ]);
+            }
+
+            return $data;
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao renovar token');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Definir token para uso nas requisições
+     *
+     * @param string $token Token JWT
+     * @return self
+     */
+    public function withToken(string $token): self
+    {
+        $clone = clone $this;
+        $clone->apiToken = $token;
+        $clone->http = $clone->http->withHeaders([
+            'Authorization' => "Bearer {$token}",
+        ]);
+        
+        return $clone;
+    }
+
+    /**
+     * Definir ID de correlação para rastreamento entre sistemas
+     *
+     * @param string|null $correlationId ID de correlação ou null para gerar um novo
+     * @return self
+     */
+    public function withCorrelationId(?string $correlationId = null): self
+    {
+        $clone = clone $this;
+        $clone->correlationId = $correlationId ?? (string) Str::uuid();
+        $clone->http = $clone->http->withHeaders([
+            'X-Correlation-ID' => $clone->correlationId,
+        ]);
+        
+        return $clone;
+    }
+
+    /**
+     * Iniciar uma transação para garantir atomicidade entre operações
+     *
+     * @return string ID da transação
+     * @throws WhatsAppException
+     */
+    public function beginTransaction(): string
+    {
+        try {
+            $response = $this->http->post('/api/transaction/begin');
+            
+            $this->checkResponse($response, 'Erro ao iniciar transação');
+            
+            return $response->json()['transaction_id'];
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao iniciar transação');
+            throw new WhatsAppException('Falha ao iniciar transação: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Definir ID de transação para próximas operações
+     *
+     * @param string $transactionId ID da transação
+     * @return self
+     */
+    public function withTransaction(string $transactionId): self
+    {
+        $clone = clone $this;
+        $clone->transactionId = $transactionId;
+        
+        return $clone;
+    }
+
+    /**
+     * Confirmar uma transação
+     *
+     * @param string $transactionId ID da transação
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function commitTransaction(string $transactionId): array
+    {
+        try {
+            $response = $this->http->post('/api/transaction/commit', [
+                'transaction_id' => $transactionId
+            ]);
+            
+            $this->checkResponse($response, 'Erro ao confirmar transação');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao confirmar transação');
+            throw new WhatsAppException('Falha ao confirmar transação: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reverter uma transação
+     *
+     * @param string $transactionId ID da transação
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function rollbackTransaction(string $transactionId): array
+    {
+        try {
+            $response = $this->http->post('/api/transaction/rollback', [
+                'transaction_id' => $transactionId
+            ]);
+            
+            $this->checkResponse($response, 'Erro ao reverter transação');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao reverter transação');
+            throw new WhatsAppException('Falha ao reverter transação: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obter status do circuit breaker
+     *
+     * @param string|null $service Nome do serviço específico ou null para todos
+     * @return array Status do circuit breaker
+     * @throws WhatsAppException
+     */
+    public function getCircuitBreakerStatus(?string $service = null): array
+    {
+        try {
+            $url = '/api/circuit-breaker';
+            if ($service) {
+                $url .= "/{$service}";
+            }
+            
+            $response = $this->http->get($url);
+            
+            $this->checkResponse($response, 'Erro ao obter status do circuit breaker');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao obter status do circuit breaker');
+            throw new WhatsAppException('Falha ao obter status do circuit breaker: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Resetar manualmente um circuit breaker
+     *
+     * @param string $service Nome do serviço
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function resetCircuitBreaker(string $service): array
+    {
+        try {
+            $response = $this->http->post("/api/circuit-breaker/{$service}/reset");
+            
+            $this->checkResponse($response, 'Erro ao resetar circuit breaker');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao resetar circuit breaker');
+            throw new WhatsAppException('Falha ao resetar circuit breaker: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Agendar uma mensagem para envio futuro
+     *
+     * @param array $data Dados da mensagem
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function scheduleMessage(array $data): array
+    {
+        try {
+            $response = $this->http->post('/api/schedule', $data);
+            
+            $this->checkResponse($response, 'Erro ao agendar mensagem');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao agendar mensagem');
+            throw new WhatsAppException('Falha ao agendar mensagem: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cancelar uma mensagem agendada
+     *
+     * @param string $messageId ID da mensagem agendada
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function cancelScheduledMessage(string $messageId): array
+    {
+        try {
+            $response = $this->http->delete("/api/schedule/{$messageId}");
+            
+            $this->checkResponse($response, 'Erro ao cancelar mensagem agendada');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao cancelar mensagem agendada');
+            throw new WhatsAppException('Falha ao cancelar mensagem agendada: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obter logs por ID de correlação
+     *
+     * @param string $correlationId ID de correlação
+     * @return array Logs relacionados ao ID de correlação
+     * @throws WhatsAppException
+     */
+    public function getLogsByCorrelationId(string $correlationId): array
+    {
+        try {
+            $response = $this->http->get("/api/logs/correlation/{$correlationId}");
+            
+            $this->checkResponse($response, 'Erro ao obter logs');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao obter logs');
+            throw new WhatsAppException('Falha ao obter logs: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Verificar token do Laravel Sanctum e autenticar com a API WhatsApp
+     *
+     * @param string $sanctumToken Token do Laravel Sanctum
+     * @return array Resultado da autenticação
+     * @throws WhatsAppException
+     */
+    public function verifySanctumToken(string $sanctumToken): array
+    {
+        try {
+            $response = $this->http->post('/api/auth/sanctum', [
+                'sanctum_token' => $sanctumToken
+            ]);
+            
+            $this->checkResponse($response, 'Erro ao verificar token Sanctum');
+            
+            $data = $response->json();
+            $this->apiToken = $data['accessToken'] ?? null;
+
+            // Atualizar o cliente HTTP com o novo token
+            if ($this->apiToken) {
+                $this->http = $this->http->withHeaders([
+                    'Authorization' => "Bearer {$this->apiToken}",
+                ]);
+            }
+            
+            return $data;
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao verificar token Sanctum');
+            throw new WhatsAppException('Falha ao verificar token Sanctum: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -59,18 +408,31 @@ class WhatsAppService implements WhatsAppClient
      *
      * @param string $to Número de telefone no formato internacional (ex: 5548999998888)
      * @param string $message Texto da mensagem
+     * @param array $options Opções adicionais (priority, delay, quoted_message_id)
      * @param string|null $sessionId ID da sessão WhatsApp (opcional)
      * @return array Resposta da API
      * @throws WhatsAppException
      */
-    public function sendText(string $to, string $message, ?string $sessionId = null): array
+    public function sendText(string $to, string $message, array $options = [], ?string $sessionId = null): array
     {
         try {
-            $response = $this->http->post('/laravel/send', [
+            $payload = [
                 'sessionId' => $sessionId ?? $this->defaultSession,
                 'to' => $this->formatPhoneNumber($to),
                 'message' => $message,
-            ]);
+            ];
+            
+            // Adicionar opções adicionais
+            if (!empty($options)) {
+                $payload = array_merge($payload, $options);
+            }
+            
+            // Adicionar transaction_id se estiver definido
+            if ($this->transactionId) {
+                $payload['transaction_id'] = $this->transactionId;
+            }
+            
+            $response = $this->http->post('/laravel/send', $payload);
 
             $this->checkResponse($response, 'Erro ao enviar mensagem de texto');
 

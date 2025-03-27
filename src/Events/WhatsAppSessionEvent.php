@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroWhatsApp\Events;
+namespace DesterroShop\LaravelWhatsApp\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -15,68 +15,49 @@ class WhatsAppSessionEvent implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * Nome do evento de sessão
+     * Tipo de evento
      *
      * @var string
      */
-    public $eventName;
+    public $event;
 
     /**
      * Dados do evento
      *
      * @var array
      */
-    public $eventData;
+    public $data;
 
     /**
-     * Create a new event instance.
+     * Criar uma nova instância de evento
      *
-     * @param string $eventName
-     * @param array $eventData
+     * @param string $event
+     * @param array $data
      * @return void
      */
-    public function __construct(string $eventName, array $eventData)
+    public function __construct(string $event, array $data)
     {
-        $this->eventName = $eventName;
-        $this->eventData = $eventData;
+        $this->event = $event;
+        $this->data = $data;
     }
 
     /**
-     * Get the channels the event should broadcast on.
+     * Obter os canais em que o evento deve ser transmitido.
      *
      * @return \Illuminate\Broadcasting\Channel|array
      */
     public function broadcastOn()
     {
-        $sessionId = $this->eventData['sessionId'] ?? 'default';
-        
-        return [
-            new PrivateChannel('whatsapp'),
-            new PrivateChannel("whatsapp.session.{$sessionId}")
-        ];
+        return new Channel(config('whatsapp.broadcast.channel', 'whatsapp'));
     }
-    
+
     /**
-     * The event's broadcast name.
+     * O nome do evento a ser transmitido
      *
      * @return string
      */
     public function broadcastAs()
     {
-        return $this->eventName;
-    }
-    
-    /**
-     * Get the data to broadcast.
-     *
-     * @return array
-     */
-    public function broadcastWith()
-    {
-        return [
-            'event' => $this->eventName,
-            'data' => $this->eventData,
-            'timestamp' => now()->timestamp
-        ];
+        return 'session.' . $this->event;
     }
 } 

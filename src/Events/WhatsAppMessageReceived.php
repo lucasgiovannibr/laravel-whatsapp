@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroWhatsApp\Events;
+namespace DesterroShop\LaravelWhatsApp\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -19,52 +19,36 @@ class WhatsAppMessageReceived implements ShouldBroadcast
      *
      * @var array
      */
-    public $messageData;
+    public $message;
 
     /**
-     * Create a new event instance.
+     * Criar uma nova instância de evento
      *
-     * @param array $messageData
+     * @param array $message
      * @return void
      */
-    public function __construct(array $messageData)
+    public function __construct(array $message)
     {
-        $this->messageData = $messageData;
+        $this->message = $message;
     }
 
     /**
-     * Get the channels the event should broadcast on.
+     * Obter os canais em que o evento deve ser transmitido.
      *
      * @return \Illuminate\Broadcasting\Channel|array
      */
     public function broadcastOn()
     {
-        $sessionId = $this->messageData['sessionId'] ?? 'default';
-        
-        return [
-            new PrivateChannel('whatsapp'),
-            new PrivateChannel("whatsapp.session.{$sessionId}"),
-            new PrivateChannel("whatsapp.messages"),
-        ];
+        return new Channel(config('whatsapp.broadcast.channel', 'whatsapp'));
     }
-    
+
     /**
-     * The event's broadcast name.
+     * O nome do evento a ser transmitido
      *
      * @return string
      */
     public function broadcastAs()
     {
         return 'message.received';
-    }
-    
-    /**
-     * Get the data to broadcast.
-     *
-     * @return array
-     */
-    public function broadcastWith()
-    {
-        return $this->messageData;
     }
 } 

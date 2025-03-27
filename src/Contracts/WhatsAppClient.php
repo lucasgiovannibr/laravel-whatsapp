@@ -5,14 +5,93 @@ namespace DesterroShop\LaravelWhatsApp\Contracts;
 interface WhatsAppClient
 {
     /**
+     * Autenticar e obter token JWT
+     *
+     * @return array Tokens de autenticação
+     */
+    public function authenticate(): array;
+
+    /**
+     * Renovar o token usando refresh token
+     *
+     * @param string $refreshToken Token de atualização
+     * @return array Novos tokens
+     */
+    public function refreshToken(string $refreshToken): array;
+
+    /**
+     * Definir token para uso nas requisições
+     *
+     * @param string $token Token JWT
+     * @return self
+     */
+    public function withToken(string $token): self;
+
+    /**
+     * Definir ID de correlação para rastreamento entre sistemas
+     *
+     * @param string|null $correlationId ID de correlação ou null para gerar um novo
+     * @return self
+     */
+    public function withCorrelationId(?string $correlationId = null): self;
+
+    /**
+     * Iniciar uma transação para garantir atomicidade entre operações
+     *
+     * @return string ID da transação
+     */
+    public function beginTransaction(): string;
+
+    /**
+     * Definir ID de transação para próximas operações
+     *
+     * @param string $transactionId ID da transação
+     * @return self
+     */
+    public function withTransaction(string $transactionId): self;
+
+    /**
+     * Confirmar uma transação
+     *
+     * @param string $transactionId ID da transação
+     * @return array Resposta da API
+     */
+    public function commitTransaction(string $transactionId): array;
+
+    /**
+     * Reverter uma transação
+     *
+     * @param string $transactionId ID da transação
+     * @return array Resposta da API
+     */
+    public function rollbackTransaction(string $transactionId): array;
+
+    /**
+     * Obter status do circuit breaker
+     *
+     * @param string|null $service Nome do serviço específico ou null para todos
+     * @return array Status do circuit breaker
+     */
+    public function getCircuitBreakerStatus(?string $service = null): array;
+
+    /**
+     * Resetar manualmente um circuit breaker
+     *
+     * @param string $service Nome do serviço
+     * @return array Resposta da API
+     */
+    public function resetCircuitBreaker(string $service): array;
+
+    /**
      * Enviar uma mensagem de texto para um número
      *
-     * @param string $to Número de telefone no formato internacional (ex: 5548999998888)
+     * @param string $to Número de telefone no formato internacional
      * @param string $message Texto da mensagem
+     * @param array $options Opções adicionais (priority, delay, quoted_message_id)
      * @param string|null $sessionId ID da sessão WhatsApp (opcional)
      * @return array Resposta da API
      */
-    public function sendText(string $to, string $message, ?string $sessionId = null): array;
+    public function sendText(string $to, string $message, array $options = [], ?string $sessionId = null): array;
     
     /**
      * Enviar uma mensagem usando um template
@@ -204,4 +283,36 @@ interface WhatsAppClient
      * @return array Resposta da API
      */
     public function setWebhook(string $url, array $events = []): array;
+
+    /**
+     * Agendar uma mensagem para envio futuro
+     *
+     * @param array $data Dados da mensagem
+     * @return array Resposta da API
+     */
+    public function scheduleMessage(array $data): array;
+
+    /**
+     * Cancelar uma mensagem agendada
+     *
+     * @param string $messageId ID da mensagem agendada
+     * @return array Resposta da API
+     */
+    public function cancelScheduledMessage(string $messageId): array;
+
+    /**
+     * Obter logs por ID de correlação
+     *
+     * @param string $correlationId ID de correlação
+     * @return array Logs relacionados ao ID de correlação
+     */
+    public function getLogsByCorrelationId(string $correlationId): array;
+
+    /**
+     * Verificar token do Laravel Sanctum e autenticar com a API WhatsApp
+     *
+     * @param string $sanctumToken Token do Laravel Sanctum
+     * @return array Resultado da autenticação
+     */
+    public function verifySanctumToken(string $sanctumToken): array;
 } 

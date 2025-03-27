@@ -1,226 +1,310 @@
-# Pacote de Integração Laravel WhatsApp
+# Laravel WhatsApp Integration
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/desterroshop/laravel-whatsapp.svg?style=flat-square)](https://packagist.org/packages/desterroshop/laravel-whatsapp)
-[![Total Downloads](https://img.shields.io/packagist/dt/desterroshop/laravel-whatsapp.svg?style=flat-square)](https://packagist.org/packages/desterroshop/laravel-whatsapp)
-[![PHP Version](https://img.shields.io/packagist/php-v/desterroshop/laravel-whatsapp.svg?style=flat-square)](https://packagist.org/packages/desterroshop/laravel-whatsapp)
-[![License](https://img.shields.io/github/license/desterroshop/laravel-whatsapp?style=flat-square)](https://github.com/desterroshop/laravel-whatsapp/blob/master/LICENSE)
-
-Pacote oficial para integração do Laravel com a API DesterroShop WhatsApp.
-
-- [Requisitos](#requisitos)
-- [Instalação](#instalação)
-- [Configuração](#configuração)
-- [Uso](#uso)
-  - [Envio de Mensagens](#envio-de-mensagens)
-  - [Recebimento de Mensagens](#recebimento-de-mensagens)
-  - [Sistema de Notificações](#sistema-de-notificações)
-  - [Templates de Mensagem](#templates-de-mensagem)
-- [Documentação Completa](#documentação-completa)
-- [Licença](#licença)
-- [Suporte](#suporte)
-
-## Requisitos
-
-- PHP 8.1 ou superior
-- Laravel 10.x ou 11.x
-- Servidor WhatsApp API em execução
-- Extensão ext-json do PHP
+Integração robusta entre Laravel e API WhatsApp Node.js com suporte a recursos avançados como tokens de atualização, circuit breaker, rastreamento de correlação, transações atômicas e muito mais.
 
 ## Instalação
 
 Instale o pacote via Composer:
 
 ```bash
-composer require lucasgiovanni/laravel-whatsapp
+composer require desterroshop/laravel-whatsapp
 ```
 
-O pacote utiliza auto-discovery do Laravel, então o Service Provider será registrado automaticamente.
-
-Em seguida, publique os arquivos de configuração e migrações:
+### Publicar configurações
 
 ```bash
-php artisan vendor:publish --provider="DesterroShop\LaravelWhatsApp\WhatsAppServiceProvider" --tag="whatsapp-config"
-php artisan vendor:publish --provider="DesterroShop\LaravelWhatsApp\WhatsAppServiceProvider" --tag="whatsapp-migrations"
-```
-
-Execute as migrações para criar as tabelas necessárias:
-
-```bash
-php artisan migrate
+php artisan vendor:publish --provider="DesterroShop\LaravelWhatsApp\LaravelWhatsAppServiceProvider" --tag="config"
 ```
 
 ## Configuração
 
-Adicione as seguintes variáveis de ambiente ao seu arquivo `.env`:
+Ajuste as configurações em `config/whatsapp.php` ou defina as variáveis de ambiente no arquivo `.env`:
 
 ```
-WHATSAPP_API_URL=http://localhost:8787
-WHATSAPP_API_TOKEN=seu_token_jwt
+WHATSAPP_API_URL=http://localhost:3000
+WHATSAPP_API_KEY=sua-api-key
 WHATSAPP_DEFAULT_SESSION=default
-WHATSAPP_WEBHOOK_SECRET=seu_webhook_secret
 ```
 
-Para utilizar com múltiplas sessões, você pode criar uma configuração específica para cada sessão no arquivo `config/whatsapp.php`.
+## Recursos principais
 
-## Uso
+### Autenticação avançada
 
-### Envio de Mensagens
-
-Você pode utilizar a Facade `WhatsApp` para enviar mensagens:
+O pacote oferece um sistema de autenticação com tokens de atualização para manter a segurança e evitar expiração:
 
 ```php
 use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
 
-// Enviar texto simples
-WhatsApp::sendText('5548999998888', 'Olá, esta é uma mensagem de teste!');
+// Autenticar e obter tokens
+$tokens = WhatsApp::authenticate();
+// array('access_token' => '...', 'refresh_token' => '...', 'expires_in' => 3600)
 
-// Enviar imagem
-WhatsApp::sendImage('5548999998888', 'https://exemplo.com/imagem.jpg', 'Legenda opcional');
+// Renovar tokens
+$newTokens = WhatsApp::refreshToken($refreshToken);
 
-// Enviar documento
-WhatsApp::sendFile('5548999998888', 'https://exemplo.com/documento.pdf', 'Relatório 2023');
-
-// Enviar localização
-WhatsApp::sendLocation('5548999998888', -27.5969, -48.5495, 'Florianópolis/SC');
-
-// Enviar mensagem com template
-WhatsApp::sendTemplate('5548999998888', 'boas-vindas', [
-    'nome' => 'João Silva',
-    'empresa' => 'DesterroShop'
-]);
+// Definir token para requisições
+WhatsApp::withToken($accessToken)->sendText('5548999998888', 'Olá!');
 ```
 
-### Recebimento de Mensagens
+### Rastreamento entre sistemas
 
-Configure o webhook no seu arquivo `.env`:
-
-```
-WHATSAPP_WEBHOOK_URL=https://sua-aplicacao.com/webhook/whatsapp
-```
-
-Na sua aplicação Laravel, você pode criar rotas que respondem a mensagens específicas:
+O pacote oferece ID de correlação para rastrear requisições entre sistemas:
 
 ```php
-// routes/web.php
-use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
+// Definir ID de correlação
+$result = WhatsApp::withCorrelationId('seu-id-unico')
+    ->sendText('5548999998888', 'Olá!');
 
-// Respondem a mensagens específicas
-Route::whatsapp('oi,olá,início', function() {
-    $from = request()->input('message.from');
-    WhatsApp::sendText($from, 'Olá! Como posso ajudar?');
+// Obter logs pelo ID de correlação
+$logs = WhatsApp::getLogsByCorrelationId('seu-id-unico');
+```
+
+### Transações atômicas
+
+Garanta a atomicidade de operações complexas:
+
+```php
+// Iniciar transação
+$transactionId = WhatsApp::beginTransaction();
+
+try {
+    // Enviar múltiplas mensagens na mesma transação
+    WhatsApp::withTransaction($transactionId)
+        ->sendText('5548999998888', 'Primeira mensagem');
+        
+    WhatsApp::withTransaction($transactionId)
+        ->sendText('5548999998888', 'Segunda mensagem');
+        
+    // Confirmar transação
+    WhatsApp::commitTransaction($transactionId);
+} catch (\Exception $e) {
+    // Reverter em caso de falha
+    WhatsApp::rollbackTransaction($transactionId);
+    throw $e;
+}
+```
+
+### Utilizando o Circuit Breaker
+
+Proteja seu sistema contra falhas em cascata:
+
+```php
+use DesterroShop\LaravelWhatsApp\Services\CircuitBreakerService;
+
+// Injetar o serviço
+public function __construct(CircuitBreakerService $circuitBreaker)
+{
+    $this->circuitBreaker = $circuitBreaker;
+}
+
+// Executar operação protegida
+$result = $this->circuitBreaker->execute('whatsapp-api', function () {
+    return WhatsApp::sendText('5548999998888', 'Mensagem protegida por circuit breaker');
+}, function () {
+    // Fallback em caso de falha
+    return ['success' => false, 'message' => 'Serviço indisponível'];
 });
-
-// Responde a qualquer mensagem
-Route::post('webhook/whatsapp', 'WhatsAppWebhookController@handle')
-    ->middleware('whatsapp.webhook');
 ```
 
-O middleware `whatsapp.webhook` irá verificar a assinatura do webhook para garantir que a requisição é válida.
+### Envio de mensagens
 
-### Sistema de Notificações
-
-O pacote inclui um canal de notificação para WhatsApp. Você pode utilizá-lo da seguinte forma:
+O pacote suporta vários tipos de mensagens:
 
 ```php
-// app/Notifications/PedidoConfirmado.php
+// Mensagem de texto
+WhatsApp::sendText('5548999998888', 'Olá, como vai?', [
+    'priority' => 'high',
+    'delay' => 0,
+    'quoted_message_id' => '12345'
+]);
 
-use DesterroShop\LaravelWhatsApp\Notifications\Channels\WhatsAppChannel;
-use Illuminate\Notifications\Notification;
+// Mensagem com template
+WhatsApp::sendTemplate('5548999998888', 'boas_vindas', [
+    'name' => 'João',
+    'company' => 'DesterroShop'
+]);
 
-class PedidoConfirmado extends Notification
-{
-    public function via($notifiable)
-    {
-        return ['mail', WhatsAppChannel::class];
-    }
-    
-    public function toWhatsApp($notifiable)
-    {
-        return [
-            'message' => "Olá {$notifiable->name}, seu pedido #{$this->pedido->codigo} foi confirmado!",
-            // ou usando template:
-            'template' => 'pedido-confirmado',
-            'data' => [
-                'numero' => $this->pedido->codigo,
-                'valor' => $this->pedido->valor,
-                'prazo' => $this->pedido->prazo
-            ]
-        ];
-    }
-}
-```
-
-Para que um modelo possa receber notificações via WhatsApp, ele deve implementar a interface `DesterroShop\LaravelWhatsApp\Contracts\WhatsAppNotifiable`:
-
-```php
-// app/Models/User.php
-
-use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppNotifiable;
-use DesterroShop\LaravelWhatsApp\Traits\ReceivesWhatsApp;
-
-class User extends Authenticatable implements WhatsAppNotifiable
-{
-    use ReceivesWhatsApp;
-    
-    // Método opcional caso o número de telefone não esteja no campo 'phone'
-    public function routeNotificationForWhatsApp()
-    {
-        return $this->whatsapp_number;
-    }
-}
-```
-
-### Templates de Mensagem
-
-Você pode criar templates de mensagem usando Handlebars:
-
-```php
-// Criar ou atualizar um template
-app(DesterroShop\LaravelWhatsApp\Services\TemplateService::class)->saveTemplate(
-    'pedido-confirmado',
-    'Olá {{nome}}, seu pedido #{{numero}} no valor de {{valor}} foi confirmado!'
+// Mensagem com mídia
+WhatsApp::sendMedia(
+    '5548999998888',
+    'https://exemplo.com/imagem.jpg',
+    'image',
+    'Veja esta imagem incrível!'
 );
 
-// Enviar mensagem usando o template
-WhatsApp::sendTemplate('5548999998888', 'pedido-confirmado', [
-    'nome' => 'Maria',
-    'numero' => '12345',
-    'valor' => 'R$ 150,00'
+// Mensagem com lista
+WhatsApp::sendList(
+    '5548999998888',
+    'Selecione uma opção',
+    'Ver opções',
+    [
+        ['id' => '1', 'title' => 'Opção 1', 'description' => 'Descrição da opção 1'],
+        ['id' => '2', 'title' => 'Opção 2', 'description' => 'Descrição da opção 2'],
+    ],
+    'Por favor, escolha uma das opções abaixo'
+);
+
+// Mensagem com botões
+WhatsApp::sendButton(
+    '5548999998888',
+    'Clique em um botão',
+    [
+        ['id' => 'btn1', 'text' => 'Sim'],
+        ['id' => 'btn2', 'text' => 'Não'],
+    ]
+);
+```
+
+### Webhooks
+
+Configure webhooks para receber eventos do WhatsApp:
+
+```php
+// Registrar webhook
+WhatsApp::registerWebhook(
+    'https://seu-site.com/api/whatsapp/webhook',
+    ['message', 'message_ack', 'group_join']
+);
+
+// Listar webhooks
+$webhooks = WhatsApp::listWebhooks();
+
+// Remover webhook
+WhatsApp::removeWebhook('https://seu-site.com/api/whatsapp/webhook');
+```
+
+### Manipular eventos de webhook
+
+```php
+// Em app/Http/Controllers/WhatsAppWebhookController.php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+class WhatsAppWebhookController extends Controller
+{
+    public function handle(Request $request)
+    {
+        $payload = $request->all();
+        $event = $payload['event'] ?? 'unknown';
+        
+        Log::info("Webhook WhatsApp recebido: {$event}", [
+            'correlation_id' => $request->header('X-Correlation-ID'),
+            'payload' => $payload
+        ]);
+        
+        // Processar o evento de acordo com o tipo
+        switch ($event) {
+            case 'message':
+                // Processar mensagem recebida
+                break;
+                
+            case 'message_ack':
+                // Processar confirmação de entrega
+                break;
+                
+            // outros eventos...
+        }
+        
+        return response()->json(['success' => true]);
+    }
+}
+```
+
+### Filas e Jobs
+
+Para processamento assíncrono:
+
+```php
+use DesterroShop\LaravelWhatsApp\Jobs\ProcessWhatsAppJob;
+
+// Agendar envio de mensagem
+ProcessWhatsAppJob::dispatch('send-text', [
+    'to' => '5548999998888',
+    'message' => 'Mensagem agendada',
+    'options' => [
+        'priority' => 'medium',
+    ]
+], [
+    'attempts' => 3,
+    'delay' => 60, // segundos
+    'correlation_id' => 'job-123',
+    'priority' => 'high'
 ]);
 ```
 
-Você também pode usar diretivas Blade para templates:
+## Middleware
+
+### Correlation ID Middleware
+
+Adicione o middleware no seu `app/Http/Kernel.php`:
 
 ```php
-// Em uma view Blade
-@whatsappTemplate('pedido-confirmado', ['nome' => 'Pedro'])
+protected $middlewareGroups = [
+    'api' => [
+        // ...
+        \DesterroShop\LaravelWhatsApp\Middleware\CorrelationIdMiddleware::class,
+    ],
+];
 ```
 
-## Suporte a Múltiplas Sessões
+Este middleware adiciona automaticamente um ID de correlação para todas as requisições.
 
-Para trabalhar com múltiplas sessões de WhatsApp:
+## Comandos Artisan
+
+```bash
+# Configurar webhook
+php artisan whatsapp:setup-webhook https://seu-site.com/api/whatsapp/webhook
+
+# Limpar transações expiradas
+php artisan whatsapp:cleanup-transactions --older-than=60
+```
+
+## Tratamento de Erros
 
 ```php
-// Listar todas as sessões
-$sessions = WhatsApp::sessions();
+use DesterroShop\LaravelWhatsApp\Exceptions\WhatsAppException;
 
-// Usar uma sessão específica
-WhatsApp::session('vendas')->sendText('5548999998888', 'Mensagem da equipe de vendas');
-WhatsApp::session('suporte')->sendText('5548999997777', 'Mensagem da equipe de suporte');
+try {
+    WhatsApp::sendText('5548999998888', 'Olá!');
+} catch (WhatsAppException $e) {
+    // Tratar erro específico da API WhatsApp
+    report($e);
+    return response()->json(['error' => $e->getMessage()], $e->getCode());
+} catch (\Exception $e) {
+    // Tratar outros erros
+    report($e);
+    return response()->json(['error' => 'Erro interno do servidor'], 500);
+}
 ```
 
-## Documentação Completa
+## Integração com Laravel Sanctum
 
-Para a documentação completa, visite [a wiki do projeto](https://github.com/desterroshop/laravel-whatsapp/wiki).
+Adicione suporte ao Laravel Sanctum:
+
+```php
+// config/whatsapp.php
+'sanctum' => [
+    'enabled' => true,
+    'proxy_url' => '/api/whatsapp/proxy',
+],
+```
+
+Verifica tokens do Sanctum:
+
+```php
+// Verificar token Sanctum e autenticar com API
+$result = WhatsApp::verifySanctumToken($sanctumToken);
+```
+
+## Testes
+
+```bash
+composer test
+```
 
 ## Licença
 
-Este pacote é licenciado sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
-## Suporte
-
-Para suporte, entre em contato pelo email [suporte@desterroshop.com](mailto:suporte@desterroshop.com).
-
----
-
-Feito com ❤️ pela DesterroShop 
+Este pacote é open-source e licenciado sob a [Licença MIT](LICENSE.md). 

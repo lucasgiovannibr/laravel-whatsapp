@@ -3,25 +3,61 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Configurações de URL da API
+    | Configurações da API WhatsApp
     |--------------------------------------------------------------------------
     |
-    | Configurações relacionadas à conexão com a API WhatsApp DesterroShop
+    | Configurações relacionadas à conexão com a API do WhatsApp
     |
     */
-    'api_url' => env('WHATSAPP_API_URL', 'http://localhost:8787'),
+    'api_url' => env('WHATSAPP_API_URL', 'http://localhost:3000'),
     'api_token' => env('WHATSAPP_API_TOKEN', ''),
+    'api_key' => env('WHATSAPP_API_KEY', ''),
+    'default_session' => env('WHATSAPP_DEFAULT_SESSION', 'default'),
+    'request_timeout' => env('WHATSAPP_REQUEST_TIMEOUT', 30),
+    'qr_timeout' => env('WHATSAPP_QR_TIMEOUT', 60),
     
     /*
     |--------------------------------------------------------------------------
-    | Configurações de Sessão
+    | Configurações de Autenticação
     |--------------------------------------------------------------------------
     |
-    | Defina as configurações para as sessões do WhatsApp
+    | Configurações para autenticação JWT e Refresh Token
     |
     */
-    'default_session' => env('WHATSAPP_DEFAULT_SESSION', 'default'),
-    'qr_timeout' => env('WHATSAPP_QR_TIMEOUT', 60), // Tempo em segundos para expirar o QR code
+    'auth' => [
+        'jwt_secret' => env('WHATSAPP_JWT_SECRET', ''),
+        'jwt_expiration' => env('WHATSAPP_JWT_EXPIRATION', '1d'),
+        'refresh_secret' => env('WHATSAPP_JWT_REFRESH_SECRET', ''),
+        'refresh_expiration' => env('WHATSAPP_JWT_REFRESH_EXPIRATION', '7d'),
+        'store_tokens' => env('WHATSAPP_STORE_TOKENS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de Circuit Breaker
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para o padrão Circuit Breaker
+    |
+    */
+    'circuit_breaker' => [
+        'threshold' => env('WHATSAPP_CIRCUIT_BREAKER_THRESHOLD', 5),
+        'timeout' => env('WHATSAPP_CIRCUIT_BREAKER_TIMEOUT', 30000),
+        'reset_timeout' => env('WHATSAPP_CIRCUIT_BREAKER_RESET_TIMEOUT', 60000),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de Transações
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para transações atômicas
+    |
+    */
+    'transaction' => [
+        'timeout' => env('WHATSAPP_TRANSACTION_TIMEOUT', 30000),
+        'auto_rollback' => env('WHATSAPP_TRANSACTION_AUTO_ROLLBACK', true),
+    ],
     
     /*
     |--------------------------------------------------------------------------
@@ -31,16 +67,35 @@ return [
     | Configurações para o webhook que recebe eventos do WhatsApp
     |
     */
-    'webhook_url' => env('WHATSAPP_WEBHOOK_URL', null),
-    'webhook_secret' => env('WHATSAPP_WEBHOOK_SECRET', null),
-    'webhook_events' => [
-        'message', 
-        'message_ack', 
-        'message_create', 
-        'message_revoke_everyone', 
-        'qr', 
-        'disconnected', 
-        'ready'
+    'webhook' => [
+        'url' => env('WHATSAPP_WEBHOOK_URL', '/webhook/whatsapp'),
+        'secret' => env('WHATSAPP_WEBHOOK_SECRET', null),
+        'events' => [
+            'message', 
+            'message_ack', 
+            'disconnected', 
+            'ready'
+        ],
+        'middleware' => [],
+        'max_retries' => env('WHATSAPP_WEBHOOK_MAX_RETRIES', 3),
+        'retry_delay' => env('WHATSAPP_WEBHOOK_RETRY_DELAY', 1000),
+        'backoff_factor' => env('WHATSAPP_WEBHOOK_BACKOFF_FACTOR', 1.5),
+        'jitter' => env('WHATSAPP_WEBHOOK_JITTER', 0.2),
+    ],
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Configurações de Queue
+    |--------------------------------------------------------------------------
+    |
+    | Configurações para integração com sistema de filas
+    |
+    */
+    'queue' => [
+        'connection' => env('WHATSAPP_QUEUE_CONNECTION', env('QUEUE_CONNECTION', 'redis')),
+        'queue' => env('WHATSAPP_QUEUE', 'whatsapp'),
+        'default_priority' => env('WHATSAPP_QUEUE_DEFAULT_PRIORITY', 'medium'),
+        'delayed_debounce' => env('WHATSAPP_QUEUE_DELAYED_DEBOUNCE', 300),
     ],
     
     /*
@@ -51,9 +106,11 @@ return [
     | Configurações para armazenamento de mídia
     |
     */
-    'media_storage' => env('WHATSAPP_MEDIA_STORAGE', 'local'), // local, s3
-    'media_path' => env('WHATSAPP_MEDIA_PATH', 'whatsapp'),
-    'media_disk' => env('WHATSAPP_MEDIA_DISK', 'public'), // Nome do disco de armazenamento do Laravel
+    'media' => [
+        'storage' => env('WHATSAPP_MEDIA_STORAGE', 'local'),
+        'path' => env('WHATSAPP_MEDIA_PATH', 'whatsapp'),
+        'disk' => env('WHATSAPP_MEDIA_DISK', 'public'),
+    ],
     
     /*
     |--------------------------------------------------------------------------
@@ -63,19 +120,23 @@ return [
     | Configurações para templates de mensagens
     |
     */
-    'templates_path' => env('WHATSAPP_TEMPLATES_PATH', resource_path('views/whatsapp/templates')),
-    'cache_templates' => env('WHATSAPP_CACHE_TEMPLATES', true),
+    'templates' => [
+        'path' => env('WHATSAPP_TEMPLATES_PATH', resource_path('views/vendor/whatsapp/templates')),
+        'cache' => env('WHATSAPP_CACHE_TEMPLATES', true),
+    ],
     
     /*
     |--------------------------------------------------------------------------
-    | Configurações de Eventos
+    | Configurações de Broadcast
     |--------------------------------------------------------------------------
     |
-    | Configurações para eventos do Laravel
+    | Configurações para transmissão de eventos
     |
     */
-    'broadcast_events' => env('WHATSAPP_BROADCAST_EVENTS', true),
-    'broadcast_channel' => env('WHATSAPP_BROADCAST_CHANNEL', 'whatsapp'),
+    'broadcast' => [
+        'enabled' => env('WHATSAPP_BROADCAST_EVENTS', true),
+        'channel' => env('WHATSAPP_BROADCAST_CHANNEL', 'whatsapp'),
+    ],
     
     /*
     |--------------------------------------------------------------------------
@@ -85,20 +146,24 @@ return [
     | Configurações para logging
     |
     */
-    'log_channel' => env('WHATSAPP_LOG_CHANNEL', env('LOG_CHANNEL', 'stack')),
-    'log_level' => env('WHATSAPP_LOG_LEVEL', 'debug'),
+    'log' => [
+        'channel' => env('WHATSAPP_LOG_CHANNEL', env('LOG_CHANNEL', 'stack')),
+        'level' => env('WHATSAPP_LOG_LEVEL', 'debug'),
+        'correlation_id' => env('WHATSAPP_LOG_CORRELATION_ID', true),
+    ],
     
     /*
     |--------------------------------------------------------------------------
-    | Configurações Avançadas
+    | Integração com Laravel Sanctum
     |--------------------------------------------------------------------------
     |
-    | Configurações avançadas para o cliente WhatsApp
+    | Configurações para integração com Laravel Sanctum
     |
     */
-    'request_timeout' => env('WHATSAPP_REQUEST_TIMEOUT', 30), // Timeout em segundos
-    'retry_attempts' => env('WHATSAPP_RETRY_ATTEMPTS', 3),
-    'auto_reconnect' => env('WHATSAPP_AUTO_RECONNECT', true),
+    'sanctum' => [
+        'enabled' => env('WHATSAPP_SANCTUM_ENABLED', false),
+        'proxy_url' => env('WHATSAPP_SANCTUM_PROXY_URL', '/api/whatsapp/proxy'),
+    ],
     
     /*
     |--------------------------------------------------------------------------
@@ -110,17 +175,6 @@ return [
     */
     'middleware' => [
         'web' => ['web'],
-        'api' => ['api', 'auth:sanctum'],
-        'webhook' => [],
+        'api' => ['api'],
     ],
-    
-    /*
-    |--------------------------------------------------------------------------
-    | Configurações de Proxy
-    |--------------------------------------------------------------------------
-    |
-    | Em alguns ambientes você pode precisar de um proxy para acessar o WhatsApp
-    |
-    */
-    'proxy' => env('WHATSAPP_PROXY', null),
 ]; 

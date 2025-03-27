@@ -8,57 +8,66 @@ use Illuminate\Support\Facades\Log;
 trait HasWhatsApp
 {
     /**
-     * Enviar mensagem de texto para este modelo
+     * Rota de notificação para WhatsApp
+     *
+     * @return string
+     */
+    public function routeNotificationForWhatsApp()
+    {
+        if (method_exists($this, 'getWhatsAppNumber')) {
+            return $this->getWhatsAppNumber();
+        }
+
+        if (isset($this->whatsapp) && !empty($this->whatsapp)) {
+            return $this->whatsapp;
+        }
+
+        if (isset($this->phone) && !empty($this->phone)) {
+            return $this->phone;
+        }
+
+        if (isset($this->mobile) && !empty($this->mobile)) {
+            return $this->mobile;
+        }
+
+        return null;
+    }
+
+    /**
+     * Enviar mensagem via WhatsApp
      *
      * @param string $message
-     * @param string|null $sessionId
-     * @return array
+     * @param string|null $session
+     * @return mixed
      */
-    public function sendWhatsApp(string $message, ?string $sessionId = null): array
+    public function sendWhatsApp(string $message, ?string $session = null)
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $number = $this->routeNotificationForWhatsApp();
         
-        if (empty($to)) {
-            Log::error('Não foi possível enviar mensagem WhatsApp: número não definido', [
-                'model' => get_class($this),
-                'id' => $this->getKey(),
-            ]);
-            
-            return [
-                'success' => false,
-                'error' => 'Número de WhatsApp não definido no modelo'
-            ];
+        if (empty($number)) {
+            throw new \Exception('Número de WhatsApp não encontrado');
         }
         
-        return WhatsApp::sendText($to, $message, $sessionId);
+        return WhatsApp::sendText($number, $message, $session);
     }
-    
+
     /**
-     * Enviar template para este modelo
+     * Enviar template via WhatsApp
      *
-     * @param string $templateName
+     * @param string $template
      * @param array $data
-     * @param string|null $sessionId
-     * @return array
+     * @param string|null $session
+     * @return mixed
      */
-    public function sendWhatsAppTemplate(string $templateName, array $data = [], ?string $sessionId = null): array
+    public function sendWhatsAppTemplate(string $template, array $data = [], ?string $session = null)
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $number = $this->routeNotificationForWhatsApp();
         
-        if (empty($to)) {
-            Log::error('Não foi possível enviar template WhatsApp: número não definido', [
-                'model' => get_class($this),
-                'id' => $this->getKey(),
-                'template' => $templateName,
-            ]);
-            
-            return [
-                'success' => false,
-                'error' => 'Número de WhatsApp não definido no modelo'
-            ];
+        if (empty($number)) {
+            throw new \Exception('Número de WhatsApp não encontrado');
         }
         
-        return WhatsApp::sendTemplate($to, $templateName, $data, $sessionId);
+        return WhatsApp::sendTemplate($number, $template, $data, $session);
     }
     
     /**
@@ -278,28 +287,6 @@ trait HasWhatsApp
         }
         
         return WhatsApp::sendOrder($to, $orderData, $sessionId);
-    }
-    
-    /**
-     * Obter número de WhatsApp para envio de notificações
-     *
-     * @param mixed $notification
-     * @return string|null
-     */
-    public function routeNotificationFor($driver, $notification = null)
-    {
-        if ($driver !== 'whatsapp') {
-            return parent::routeNotificationFor($driver, $notification);
-        }
-        
-        // Por padrão, procurar os atributos comuns para telefone
-        foreach (['whatsapp', 'whatsapp_number', 'phone', 'phone_number', 'mobile', 'cell', 'telephone', 'celular', 'telefone'] as $attribute) {
-            if (isset($this->{$attribute}) && !empty($this->{$attribute})) {
-                return $this->{$attribute};
-            }
-        }
-        
-        return null;
     }
     
     /**

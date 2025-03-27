@@ -1,51 +1,51 @@
 <?php
 
-namespace DesterroWhatsApp\Http\Controllers;
+namespace DesterroShop\LaravelWhatsApp\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use DesterroWhatsApp\Services\WhatsAppService;
-use DesterroWhatsApp\Events\WhatsAppMessageReceived;
-use DesterroWhatsApp\Events\WhatsAppSessionEvent;
-use DesterroWhatsApp\Exceptions\InvalidSignatureException;
+use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
+use DesterroShop\LaravelWhatsApp\Exceptions\InvalidSignatureException;
+use DesterroShop\LaravelWhatsApp\Events\WhatsAppMessageReceived;
+use DesterroShop\LaravelWhatsApp\Events\WhatsAppSessionEvent;
 
 class WebhookController extends Controller
 {
     /**
-     * WhatsApp service instance
+     * Cliente WhatsApp
      *
-     * @var WhatsAppService
+     * @var WhatsAppClient
      */
-    protected $whatsappService;
+    protected $whatsapp;
 
     /**
-     * Create a new controller instance.
+     * Construtor
      *
-     * @param WhatsAppService $whatsappService
+     * @param WhatsAppClient $whatsapp
      */
-    public function __construct(WhatsAppService $whatsappService)
+    public function __construct(WhatsAppClient $whatsapp)
     {
-        $this->whatsappService = $whatsappService;
+        $this->whatsapp = $whatsapp;
     }
 
     /**
-     * Manipula eventos de webhooks enviados pelo servidor Node.js
+     * Manipula eventos de webhooks
      * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function handleWebhook(Request $request)
+    public function handle(Request $request)
     {
-        // Validar assinatura HMAC
+        // Validar assinatura
         if (!$this->validateSignature($request)) {
-            Log::error('WhatsApp Webhook: Assinatura HMAC inválida', [
+            Log::error('WhatsApp Webhook: Assinatura inválida', [
                 'ip' => $request->ip(),
                 'headers' => $request->headers->all(),
             ]);
             
-            throw new InvalidSignatureException('Assinatura HMAC inválida');
+            throw new InvalidSignatureException('Assinatura inválida');
         }
 
         // Validar payload
@@ -56,11 +56,6 @@ class WebhookController extends Controller
         ]);
 
         if ($validator->fails()) {
-            Log::error('WhatsApp Webhook: Payload inválido', [
-                'errors' => $validator->errors()->toArray(),
-                'payload' => $request->all()
-            ]);
-            
             return response()->json([
                 'success' => false, 
                 'message' => 'Payload inválido',
@@ -72,37 +67,27 @@ class WebhookController extends Controller
         try {
             $event = $request->input('event');
             $data = $request->input('data');
-            $timestamp = $request->input('timestamp');
             
             Log::debug('WhatsApp Webhook: Evento recebido', [
                 'event' => $event,
-                'timestamp' => date('Y-m-d H:i:s', (int)($timestamp / 1000)),
                 'data' => $data
             ]);
             
-            // Disparar eventos com base no tipo
+            // Processar diferentes tipos de eventos
             switch ($event) {
-                case 'message.received':
-                    $this->handleMessageReceived($data);
+                case 'message':
+                    $this->handleMessage($data);
                     break;
                     
-                case 'qr.generated':
-                case 'session.ready':
-                case 'session.disconnected':
-                case 'session.error':
-                case 'auth.failure':
-                case 'group.join':
-                case 'group.leave':
+                case 'status':
+                case 'qr':
+                case 'ready':
+                case 'disconnected':
                     $this->handleSessionEvent($event, $data);
-                    break;
-                    
-                case 'message.sent':
-                    $this->handleMessageSent($data);
                     break;
                 
                 default:
-                    // Eventos genéricos passam pelo evento de sessão
-                    $this->handleSessionEvent($event, $data);
+                    Log::info("WhatsApp: Evento genérico {$event}", ['data' => $data]);
                     break;
             }
             
@@ -114,8 +99,7 @@ class WebhookController extends Controller
         } catch (\Exception $e) {
             Log::error('WhatsApp Webhook: Erro ao processar evento', [
                 'event' => $request->input('event'),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
             
             return response()->json([
@@ -126,7 +110,7 @@ class WebhookController extends Controller
     }
     
     /**
-     * Valida a assinatura HMAC do webhook
+     * Valida a assinatura do webhook
      * 
      * @param Request $request
      * @return bool
@@ -139,10 +123,10 @@ class WebhookController extends Controller
             return false;
         }
         
-        $secret = config('whatsapp.webhook_secret');
+        $secret = config('whatsapp.webhook.secret');
         
         if (empty($secret)) {
-            Log::warning('WhatsApp Webhook: Secret não configurado. Validação HMAC desabilitada.');
+            Log::warning('WhatsApp Webhook: Secret não configurado. Validação desabilitada.');
             return true;
         }
         
@@ -153,41 +137,25 @@ class WebhookController extends Controller
     }
     
     /**
-     * Manipula evento de mensagem recebida
+     * Manipula evento de mensagem
      * 
      * @param array $data
      * @return void
      */
-    protected function handleMessageReceived(array $data)
+    protected function handleMessage(array $data)
     {
-        event(new WhatsAppMessageReceived($data));
+        // Disparar evento
+        if (config('whatsapp.broadcast.enabled', true)) {
+            event(new WhatsAppMessageReceived($data));
+        }
         
-        // Registrar no logger
         $from = $data['from'] ?? 'desconhecido';
         $body = $data['body'] ?? '(sem conteúdo)';
-        $type = $data['type'] ?? 'desconhecido';
+        $type = $data['type'] ?? 'text';
         
         Log::info("WhatsApp: Mensagem recebida de {$from}", [
             'type' => $type,
             'body' => $body,
-            'data' => $data
-        ]);
-    }
-    
-    /**
-     * Manipula evento de mensagem enviada
-     * 
-     * @param array $data
-     * @return void
-     */
-    protected function handleMessageSent(array $data)
-    {
-        // Registrar no logger
-        $to = $data['to'] ?? 'desconhecido';
-        $type = $data['type'] ?? 'text';
-        
-        Log::info("WhatsApp: Mensagem enviada para {$to}", [
-            'type' => $type,
             'data' => $data
         ]);
     }
@@ -201,10 +169,12 @@ class WebhookController extends Controller
      */
     protected function handleSessionEvent(string $event, array $data)
     {
-        event(new WhatsAppSessionEvent($event, $data));
+        // Disparar evento
+        if (config('whatsapp.broadcast.enabled', true)) {
+            event(new WhatsAppSessionEvent($event, $data));
+        }
         
-        // Registrar no logger
-        $sessionId = $data['sessionId'] ?? 'desconhecido';
+        $sessionId = $data['session'] ?? 'default';
         
         Log::info("WhatsApp: Evento de sessão {$event} para {$sessionId}", [
             'event' => $event,
