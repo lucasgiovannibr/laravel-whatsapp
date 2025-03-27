@@ -108,51 +108,273 @@ $result = $this->circuitBreaker->execute('whatsapp-api', function () {
 
 ### Envio de mensagens
 
-O pacote suporta vários tipos de mensagens:
+O pacote suporta diversos tipos de mensagens para atender a todas as necessidades:
+
+#### Mensagem de texto
 
 ```php
-// Mensagem de texto
-WhatsApp::sendText('5548999998888', 'Olá, como vai?', [
-    'priority' => 'high',
-    'delay' => 0,
-    'quoted_message_id' => '12345'
-]);
-
-// Mensagem com template
-WhatsApp::sendTemplate('5548999998888', 'boas_vindas', [
-    'name' => 'João',
-    'company' => 'DesterroShop'
-]);
-
-// Mensagem com mídia
-WhatsApp::sendMedia(
-    '5548999998888',
-    'https://exemplo.com/imagem.jpg',
-    'image',
-    'Veja esta imagem incrível!'
-);
-
-// Mensagem com lista
-WhatsApp::sendList(
-    '5548999998888',
-    'Selecione uma opção',
-    'Ver opções',
-    [
-        ['id' => '1', 'title' => 'Opção 1', 'description' => 'Descrição da opção 1'],
-        ['id' => '2', 'title' => 'Opção 2', 'description' => 'Descrição da opção 2'],
+// Mensagem de texto simples
+WhatsApp::sendText(
+    '5548999998888',           // Número do destinatário
+    'Olá, como vai?',          // Texto da mensagem
+    [                          // Opções adicionais (opcional)
+        'priority' => 'high',  // Prioridade: high, medium, low
+        'delay' => 0,          // Atraso em segundos
+        'quoted_message_id' => '12345' // ID da mensagem que está sendo respondida
     ],
-    'Por favor, escolha uma das opções abaixo'
+    'default'                  // ID da sessão (opcional)
 );
+```
 
-// Mensagem com botões
-WhatsApp::sendButton(
-    '5548999998888',
-    'Clique em um botão',
-    [
-        ['id' => 'btn1', 'text' => 'Sim'],
-        ['id' => 'btn2', 'text' => 'Não'],
-    ]
+#### Mensagem com template
+
+```php
+// Mensagem com template
+WhatsApp::sendTemplate(
+    '5548999998888',         // Número do destinatário
+    'boas_vindas',           // Nome do template
+    [                        // Dados para o template
+        'name' => 'João',
+        'company' => 'DesterroShop'
+    ],
+    'default'                // ID da sessão (opcional)
 );
+```
+
+#### Mensagem com imagem
+
+```php
+// Enviar uma imagem
+WhatsApp::sendImage(
+    '5548999998888',                   // Número do destinatário
+    'https://exemplo.com/imagem.jpg',  // URL da imagem
+    'Veja esta imagem incrível!',      // Legenda (opcional)
+    'default'                          // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com arquivo/documento
+
+```php
+// Enviar um arquivo/documento
+WhatsApp::sendFile(
+    '5548999998888',                   // Número do destinatário
+    'https://exemplo.com/contrato.pdf', // URL do arquivo
+    'Contrato.pdf',                    // Nome do arquivo (opcional)
+    'default'                          // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com áudio
+
+```php
+// Enviar um áudio
+WhatsApp::sendAudio(
+    '5548999998888',                   // Número do destinatário
+    'https://exemplo.com/audio.mp3',   // URL do áudio
+    'default'                          // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com mídia genérica
+
+```php
+// Enviar mídia genérica (imagem, vídeo, documento, áudio)
+WhatsApp::sendMedia(
+    '5548999998888',                   // Número do destinatário
+    'https://exemplo.com/video.mp4',   // URL da mídia
+    'video',                           // Tipo: image, video, document, audio
+    'Veja este vídeo!',                // Legenda (opcional)
+    'default'                          // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com localização
+
+```php
+// Enviar localização
+WhatsApp::sendLocation(
+    '5548999998888',  // Número do destinatário
+    -27.5969,         // Latitude
+    -48.5495,         // Longitude
+    'DesterroShop',   // Título (opcional)
+    'default'         // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com contato
+
+```php
+// Enviar contato
+WhatsApp::sendContact(
+    '5548999998888',  // Número do destinatário
+    [                 // Dados do contato
+        'name' => [
+            'first_name' => 'João',
+            'last_name' => 'Silva',
+            'formatted_name' => 'João Silva'
+        ],
+        'phones' => [
+            [
+                'phone' => '+5548999997777',
+                'type' => 'CELL'
+            ]
+        ],
+        'emails' => [
+            [
+                'email' => 'joao@example.com',
+                'type' => 'WORK'
+            ]
+        ]
+    ],
+    'default'         // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com botões
+
+```php
+// Enviar mensagem com botões
+WhatsApp::sendButtons(
+    '5548999998888',  // Número do destinatário
+    'Escolha uma opção:', // Texto principal
+    [                 // Lista de botões
+        [
+            'id' => 'btn1',
+            'text' => 'Sim'
+        ],
+        [
+            'id' => 'btn2',
+            'text' => 'Não'
+        ],
+        [
+            'id' => 'btn3',
+            'text' => 'Talvez'
+        ]
+    ],
+    'default'         // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com lista de opções
+
+```php
+// Enviar lista de opções
+WhatsApp::sendList(
+    '5548999998888',     // Número do destinatário
+    'Cardápio do dia',   // Título
+    'Escolha seu prato', // Descrição
+    'Ver opções',        // Texto do botão
+    [                    // Seções da lista
+        [
+            'title' => 'Pratos principais',
+            'rows' => [
+                ['id' => 'p1', 'title' => 'Feijoada', 'description' => 'Porção completa'],
+                ['id' => 'p2', 'title' => 'Lasanha', 'description' => 'De carne']
+            ]
+        ],
+        [
+            'title' => 'Sobremesas',
+            'rows' => [
+                ['id' => 's1', 'title' => 'Pudim', 'description' => 'Tradicional'],
+                ['id' => 's2', 'title' => 'Sorvete', 'description' => 'De chocolate']
+            ]
+        ]
+    ],
+    'default'            // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com enquete
+
+```php
+// Enviar enquete
+WhatsApp::sendPoll(
+    '5548999998888',             // Número do destinatário
+    'Qual sua cor favorita?',    // Pergunta
+    [                           // Opções
+        'Azul',
+        'Verde',
+        'Vermelho',
+        'Amarelo'
+    ],
+    false,                      // Permitir múltipla escolha
+    'default'                   // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com produto
+
+```php
+// Enviar produto do catálogo
+WhatsApp::sendProduct(
+    '5548999998888',  // Número do destinatário
+    'cat123',         // ID do catálogo
+    'prod456',        // ID do produto
+    'default'         // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com catálogo
+
+```php
+// Enviar catálogo de produtos
+WhatsApp::sendCatalog(
+    '5548999998888',  // Número do destinatário
+    'cat123',         // ID do catálogo
+    [                 // Lista de produtos (opcional)
+        'prod456',
+        'prod789'
+    ],
+    'default'         // ID da sessão (opcional)
+);
+```
+
+#### Mensagem com pedido
+
+```php
+// Enviar pedido
+WhatsApp::sendOrder(
+    '5548999998888',  // Número do destinatário
+    [                 // Dados do pedido
+        'catalog_id' => 'cat123',
+        'items' => [
+            [
+                'product_id' => 'prod456',
+                'quantity' => 2,
+                'price' => 1990
+            ],
+            [
+                'product_id' => 'prod789',
+                'quantity' => 1,
+                'price' => 2490
+            ]
+        ],
+        'customer_details' => [
+            'name' => 'João Silva',
+            'address' => 'Rua Exemplo, 123'
+        ]
+    ],
+    'default'         // ID da sessão (opcional)
+);
+```
+
+### Agendamento de mensagens
+
+```php
+// Agendar uma mensagem
+WhatsApp::scheduleMessage([
+    'type' => 'text',
+    'to' => '5548999998888',
+    'message' => 'Lembrete: Reunião às 15h',
+    'schedule_time' => '2023-12-31T15:00:00Z',
+    'options' => [
+        'priority' => 'medium'
+    ]
+]);
+
+// Cancelar uma mensagem agendada
+WhatsApp::cancelScheduledMessage('message_id_123');
 ```
 
 ### Webhooks

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Str;
+use Illuminate\Http\Client\Response;
 
 class WhatsAppService implements WhatsAppClient
 {
@@ -218,10 +219,10 @@ class WhatsAppService implements WhatsAppClient
      * Confirmar uma transação
      *
      * @param string $transactionId ID da transação
-     * @return array Resposta da API
+     * @return bool
      * @throws WhatsAppException
      */
-    public function commitTransaction(string $transactionId): array
+    public function commitTransaction(string $transactionId): bool
     {
         try {
             $response = $this->http->post('/api/transaction/commit', [
@@ -230,10 +231,10 @@ class WhatsAppService implements WhatsAppClient
             
             $this->checkResponse($response, 'Erro ao confirmar transação');
             
-            return $response->json();
+            return $response->json()['success'] ?? true;
         } catch (\Exception $e) {
             $this->handleException($e, 'Erro ao confirmar transação');
-            throw new WhatsAppException('Falha ao confirmar transação: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -241,10 +242,10 @@ class WhatsAppService implements WhatsAppClient
      * Reverter uma transação
      *
      * @param string $transactionId ID da transação
-     * @return array Resposta da API
+     * @return bool
      * @throws WhatsAppException
      */
-    public function rollbackTransaction(string $transactionId): array
+    public function rollbackTransaction(string $transactionId): bool
     {
         try {
             $response = $this->http->post('/api/transaction/rollback', [
@@ -253,10 +254,10 @@ class WhatsAppService implements WhatsAppClient
             
             $this->checkResponse($response, 'Erro ao reverter transação');
             
-            return $response->json();
+            return $response->json()['success'] ?? true;
         } catch (\Exception $e) {
             $this->handleException($e, 'Erro ao reverter transação');
-            throw new WhatsAppException('Falha ao reverter transação: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -1018,5 +1019,79 @@ class WhatsAppService implements WhatsAppClient
         ]);
         
         throw new WhatsAppException("{$context}: {$exception->getMessage()}", 500, $exception);
+    }
+
+    /**
+     * Enviar sticker
+     *
+     * @param string $to
+     * @param string $url
+     * @param string|null $sessionId
+     * @return array
+     */
+    public function sendSticker(string $to, string $url, ?string $sessionId = null): array
+    {
+        try {
+            $to = $this->formatPhoneNumber($to);
+            $sessionId = $sessionId ?? $this->defaultSession;
+
+            $payload = [
+                'to' => $to,
+                'url' => $url,
+                'session_id' => $sessionId
+            ];
+
+            // Adicionar ID de transação se definido
+            if ($this->transactionId) {
+                $payload['transaction_id'] = $this->transactionId;
+            }
+
+            $response = $this->http->post('/api/messages/send-sticker', $payload);
+            
+            $this->checkResponse($response, 'Erro ao enviar sticker');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao enviar sticker');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Enviar reação a uma mensagem
+     *
+     * @param string $to
+     * @param string $messageId
+     * @param string $emoji
+     * @param string|null $sessionId
+     * @return array
+     */
+    public function sendReaction(string $to, string $messageId, string $emoji, ?string $sessionId = null): array
+    {
+        try {
+            $to = $this->formatPhoneNumber($to);
+            $sessionId = $sessionId ?? $this->defaultSession;
+
+            $payload = [
+                'to' => $to,
+                'message_id' => $messageId,
+                'emoji' => $emoji,
+                'session_id' => $sessionId
+            ];
+
+            // Adicionar ID de transação se definido
+            if ($this->transactionId) {
+                $payload['transaction_id'] = $this->transactionId;
+            }
+
+            $response = $this->http->post('/api/messages/send-reaction', $payload);
+            
+            $this->checkResponse($response, 'Erro ao enviar reação');
+            
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao enviar reação');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
     }
 } 

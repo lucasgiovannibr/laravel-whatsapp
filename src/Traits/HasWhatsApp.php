@@ -34,13 +34,14 @@ trait HasWhatsApp
     }
 
     /**
-     * Enviar mensagem via WhatsApp
+     * Enviar mensagem de texto via WhatsApp
      *
      * @param string $message
+     * @param array $options
      * @param string|null $session
      * @return mixed
      */
-    public function sendWhatsApp(string $message, ?string $session = null)
+    public function sendWhatsApp(string $message, array $options = [], ?string $session = null)
     {
         $number = $this->routeNotificationForWhatsApp();
         
@@ -48,7 +49,7 @@ trait HasWhatsApp
             throw new \Exception('Número de WhatsApp não encontrado');
         }
         
-        return WhatsApp::sendText($number, $message, $session);
+        return WhatsApp::sendText($number, $message, $options, $session);
     }
 
     /**
@@ -73,14 +74,14 @@ trait HasWhatsApp
     /**
      * Enviar imagem para este modelo
      *
-     * @param string $imageUrl
+     * @param string $url
      * @param string|null $caption
-     * @param string|null $sessionId
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppImage(string $imageUrl, ?string $caption = null, ?string $sessionId = null): array
+    public function sendWhatsAppImage(string $url, ?string $caption = null, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar imagem WhatsApp: número não definido', [
@@ -94,20 +95,20 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendImage($to, $imageUrl, $caption, $sessionId);
+        return WhatsApp::sendImage($to, $url, $caption, $session);
     }
     
     /**
-     * Enviar arquivo para este modelo
+     * Enviar arquivo/documento para este modelo
      *
-     * @param string $fileUrl
+     * @param string $url
      * @param string|null $filename
-     * @param string|null $sessionId
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppFile(string $fileUrl, ?string $filename = null, ?string $sessionId = null): array
+    public function sendWhatsAppFile(string $url, ?string $filename = null, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar arquivo WhatsApp: número não definido', [
@@ -121,7 +122,89 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendFile($to, $fileUrl, $filename, $sessionId);
+        return WhatsApp::sendFile($to, $url, $filename, $session);
+    }
+    
+    /**
+     * Enviar áudio para este modelo
+     *
+     * @param string $url
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppAudio(string $url, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar áudio WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendAudio($to, $url, $session);
+    }
+    
+    /**
+     * Enviar vídeo para este modelo
+     *
+     * @param string $url
+     * @param string|null $caption
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppVideo(string $url, ?string $caption = null, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar vídeo WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendVideo($to, $url, $caption, $session);
+    }
+    
+    /**
+     * Enviar mídia genérica para este modelo
+     *
+     * @param string $url
+     * @param string $type
+     * @param string|null $caption
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppMedia(string $url, string $type, ?string $caption = null, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar mídia WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+                'type' => $type
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendMedia($to, $url, $type, $caption, $session);
     }
     
     /**
@@ -130,12 +213,12 @@ trait HasWhatsApp
      * @param float $latitude
      * @param float $longitude
      * @param string|null $title
-     * @param string|null $sessionId
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppLocation(float $latitude, float $longitude, ?string $title = null, ?string $sessionId = null): array
+    public function sendWhatsAppLocation(float $latitude, float $longitude, ?string $title = null, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar localização WhatsApp: número não definido', [
@@ -149,7 +232,60 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendLocation($to, $latitude, $longitude, $title, $sessionId);
+        return WhatsApp::sendLocation($to, $latitude, $longitude, $title, $session);
+    }
+    
+    /**
+     * Enviar contato para este modelo
+     *
+     * @param array $contact
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppContact(array $contact, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar contato WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendContact($to, $contact, $session);
+    }
+    
+    /**
+     * Enviar mensagem com botões para este modelo
+     *
+     * @param string $text
+     * @param array $buttons
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppButtons(string $text, array $buttons, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar botões WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendButtons($to, $text, $buttons, $session);
     }
     
     /**
@@ -159,12 +295,12 @@ trait HasWhatsApp
      * @param string $description
      * @param string $buttonText
      * @param array $sections
-     * @param string|null $sessionId
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppList(string $title, string $description, string $buttonText, array $sections, ?string $sessionId = null): array
+    public function sendWhatsAppList(string $title, string $description, string $buttonText, array $sections, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar lista WhatsApp: número não definido', [
@@ -178,7 +314,7 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendList($to, $title, $description, $buttonText, $sections, $sessionId);
+        return WhatsApp::sendList($to, $title, $description, $buttonText, $sections, $session);
     }
     
     /**
@@ -186,13 +322,13 @@ trait HasWhatsApp
      *
      * @param string $question
      * @param array $options
-     * @param bool $isMultiSelect
-     * @param string|null $sessionId
+     * @param bool $multiSelect
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppPoll(string $question, array $options, bool $isMultiSelect = false, ?string $sessionId = null): array
+    public function sendWhatsAppPoll(string $question, array $options, bool $multiSelect = false, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar enquete WhatsApp: número não definido', [
@@ -206,7 +342,7 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendPoll($to, $question, $options, $isMultiSelect, $sessionId);
+        return WhatsApp::sendPoll($to, $question, $options, $multiSelect, $session);
     }
     
     /**
@@ -214,12 +350,12 @@ trait HasWhatsApp
      *
      * @param string $catalogId
      * @param string $productId
-     * @param string|null $sessionId
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppProduct(string $catalogId, string $productId, ?string $sessionId = null): array
+    public function sendWhatsAppProduct(string $catalogId, string $productId, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar produto WhatsApp: número não definido', [
@@ -233,20 +369,20 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendProduct($to, $catalogId, $productId, $sessionId);
+        return WhatsApp::sendProduct($to, $catalogId, $productId, $session);
     }
     
     /**
      * Enviar catálogo de produtos para este modelo
      *
      * @param string $catalogId
-     * @param array $productItems
-     * @param string|null $sessionId
+     * @param array|null $productIds
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppCatalog(string $catalogId, array $productItems = [], ?string $sessionId = null): array
+    public function sendWhatsAppCatalog(string $catalogId, ?array $productIds = null, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar catálogo WhatsApp: número não definido', [
@@ -260,19 +396,19 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendCatalog($to, $catalogId, $productItems, $sessionId);
+        return WhatsApp::sendCatalog($to, $catalogId, $productIds, $session);
     }
     
     /**
      * Enviar pedido para este modelo
      *
      * @param array $orderData
-     * @param string|null $sessionId
+     * @param string|null $session
      * @return array
      */
-    public function sendWhatsAppOrder(array $orderData, ?string $sessionId = null): array
+    public function sendWhatsAppOrder(array $orderData, ?string $session = null): array
     {
-        $to = $this->routeNotificationFor('whatsapp');
+        $to = $this->routeNotificationForWhatsApp();
         
         if (empty($to)) {
             Log::error('Não foi possível enviar pedido WhatsApp: número não definido', [
@@ -286,7 +422,62 @@ trait HasWhatsApp
             ];
         }
         
-        return WhatsApp::sendOrder($to, $orderData, $sessionId);
+        return WhatsApp::sendOrder($to, $orderData, $session);
+    }
+    
+    /**
+     * Enviar sticker para este modelo
+     *
+     * @param string $url
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppSticker(string $url, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar sticker WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendSticker($to, $url, $session);
+    }
+    
+    /**
+     * Enviar reação a uma mensagem para este modelo
+     *
+     * @param string $messageId
+     * @param string $emoji
+     * @param string|null $session
+     * @return array
+     */
+    public function sendWhatsAppReaction(string $messageId, string $emoji, ?string $session = null): array
+    {
+        $to = $this->routeNotificationForWhatsApp();
+        
+        if (empty($to)) {
+            Log::error('Não foi possível enviar reação WhatsApp: número não definido', [
+                'model' => get_class($this),
+                'id' => $this->getKey(),
+                'messageId' => $messageId,
+                'emoji' => $emoji
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => 'Número de WhatsApp não definido no modelo'
+            ];
+        }
+        
+        return WhatsApp::sendReaction($to, $messageId, $emoji, $session);
     }
     
     /**
