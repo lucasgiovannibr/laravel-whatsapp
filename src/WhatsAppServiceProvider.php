@@ -19,10 +19,8 @@ class WhatsAppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         // Registrar o arquivo de configuração
         $this->mergeConfigFrom(
@@ -54,10 +52,8 @@ class WhatsAppServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any application services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         // Publicar configurações
         $this->publishes([
@@ -105,10 +101,8 @@ class WhatsAppServiceProvider extends ServiceProvider
 
     /**
      * Registrar macros de rota
-     *
-     * @return void
      */
-    protected function registerRouteMacros()
+    protected function registerRouteMacros(): void
     {
         Route::macro('whatsapp', function ($keywords, $action) {
             return Route::post('webhook/whatsapp', $action)
@@ -118,10 +112,8 @@ class WhatsAppServiceProvider extends ServiceProvider
 
     /**
      * Registrar macros Blade
-     *
-     * @return void
      */
-    protected function registerBladeMacros()
+    protected function registerBladeMacros(): void
     {
         Blade::directive('whatsappTemplate', function ($expression) {
             return "<?php echo app('" . TemplateService::class . "')->renderTemplate($expression); ?>";

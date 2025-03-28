@@ -9,30 +9,21 @@ class WhatsAppSessionsCommand extends Command
 {
     /**
      * O nome e assinatura do comando de console.
-     *
-     * @var string
      */
-    protected $signature = 'whatsapp:sessions {--start= : Inicia uma sessão específica} {--stop= : Para uma sessão específica}';
+    protected $signature = 'whatsapp:sessions {--session= : Nome da sessão específica}';
 
     /**
      * A descrição do comando de console.
-     *
-     * @var string
      */
-    protected $description = 'Gerenciar sessões do WhatsApp';
+    protected $description = 'Listar ou gerenciar sessões do WhatsApp';
 
     /**
      * Cliente WhatsApp
-     *
-     * @var WhatsAppClient
      */
-    protected $whatsapp;
+    protected WhatsAppClient $whatsapp;
 
     /**
      * Criar uma nova instância do comando.
-     *
-     * @param WhatsAppClient $whatsapp
-     * @return void
      */
     public function __construct(WhatsAppClient $whatsapp)
     {
@@ -42,99 +33,72 @@ class WhatsAppSessionsCommand extends Command
 
     /**
      * Executar o comando de console.
-     *
-     * @return int
      */
-    public function handle()
+    public function handle(): int
     {
-        if ($sessionToStart = $this->option('start')) {
-            return $this->startSession($sessionToStart);
+        $session = $this->option('session');
+
+        if ($session) {
+            return $this->showSessionStatus($session);
         }
 
-        if ($sessionToStop = $this->option('stop')) {
-            return $this->stopSession($sessionToStop);
-        }
+        return $this->listAllSessions();
+    }
 
-        return $this->listSessions();
+    /**
+     * Mostrar status de uma sessão específica
+     */
+    protected function showSessionStatus(string $session): int
+    {
+        try {
+            $status = $this->whatsapp->getStatus($session);
+            
+            $this->info("Status da sessão '{$session}':");
+            $this->table(
+                ['Campo', 'Valor'],
+                [
+                    ['Status', $status],
+                    ['Conectado', $status === 'connected' ? 'Sim' : 'Não'],
+                    ['Última Atividade', $this->whatsapp->getLastActivity($session)],
+                ]
+            );
+
+            return self::SUCCESS;
+        } catch (\Exception $e) {
+            $this->error("Erro ao obter status da sessão: " . $e->getMessage());
+            return self::FAILURE;
+        }
     }
 
     /**
      * Listar todas as sessões
-     *
-     * @return int
      */
-    protected function listSessions()
+    protected function listAllSessions(): int
     {
-        $sessions = $this->whatsapp->getSessions();
-
-        if (empty($sessions)) {
-            $this->info('Nenhuma sessão encontrada.');
-            return 0;
-        }
-
-        $rows = [];
-        foreach ($sessions as $session) {
-            $rows[] = [
-                $session['name'] ?? 'N/A',
-                $session['status'] ?? 'N/A',
-                $session['qr'] ? 'Disponível' : 'Indisponível',
-                $session['connected'] ? 'Sim' : 'Não'
-            ];
-        }
-
-        $this->table(['Nome', 'Status', 'QR Code', 'Conectado'], $rows);
-        return 0;
-    }
-
-    /**
-     * Iniciar uma sessão
-     *
-     * @param string $session
-     * @return int
-     */
-    protected function startSession(string $session)
-    {
-        $this->info("Iniciando sessão '{$session}'...");
-        
         try {
-            $result = $this->whatsapp->startSession($session);
+            $sessions = $this->whatsapp->getSessions();
             
-            if ($result) {
-                $this->info("Sessão '{$session}' iniciada com sucesso!");
-                return 0;
-            } else {
-                $this->error("Não foi possível iniciar a sessão '{$session}'.");
-                return 1;
+            if (empty($sessions)) {
+                $this->info("Nenhuma sessão encontrada.");
+                return self::SUCCESS;
             }
-        } catch (\Exception $e) {
-            $this->error("Erro ao iniciar sessão: " . $e->getMessage());
-            return 1;
-        }
-    }
 
-    /**
-     * Parar uma sessão
-     *
-     * @param string $session
-     * @return int
-     */
-    protected function stopSession(string $session)
-    {
-        $this->info("Parando sessão '{$session}'...");
-        
-        try {
-            $result = $this->whatsapp->stopSession($session);
-            
-            if ($result) {
-                $this->info("Sessão '{$session}' parada com sucesso!");
-                return 0;
-            } else {
-                $this->error("Não foi possível parar a sessão '{$session}'.");
-                return 1;
-            }
+            $this->info("Sessões disponíveis:");
+            $this->table(
+                ['Sessão', 'Status', 'Última Atividade'],
+                collect($sessions)->map(function ($session) {
+                    return [
+                        $session['name'],
+                        $session['status'],
+                        $session['last_activity'],
+                    ];
+                })->toArray()
+            );
+
+            return self::SUCCESS;
         } catch (\Exception $e) {
-            $this->error("Erro ao parar sessão: " . $e->getMessage());
-            return 1;
+            $this->error("Erro ao listar sessões: " . $e->getMessage());
+            return self::FAILURE;
         }
     }
 } 

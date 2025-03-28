@@ -9,33 +9,21 @@ class WhatsAppSendMessageCommand extends Command
 {
     /**
      * O nome e assinatura do comando de console.
-     *
-     * @var string
      */
-    protected $signature = 'whatsapp:send 
-                            {to : Número para envio no formato internacional (ex: 5548999998888)} 
-                            {message : Mensagem a ser enviada} 
-                            {--session= : Nome da sessão (opcional)}';
+    protected $signature = 'whatsapp:send {phone : Número do telefone} {message : Mensagem a ser enviada} {--session=default : Nome da sessão}';
 
     /**
      * A descrição do comando de console.
-     *
-     * @var string
      */
     protected $description = 'Enviar mensagem via WhatsApp';
 
     /**
      * Cliente WhatsApp
-     *
-     * @var WhatsAppClient
      */
-    protected $whatsapp;
+    protected WhatsAppClient $whatsapp;
 
     /**
      * Criar uma nova instância do comando.
-     *
-     * @param WhatsAppClient $whatsapp
-     * @return void
      */
     public function __construct(WhatsAppClient $whatsapp)
     {
@@ -45,30 +33,28 @@ class WhatsAppSendMessageCommand extends Command
 
     /**
      * Executar o comando de console.
-     *
-     * @return int
      */
-    public function handle()
+    public function handle(): int
     {
-        $to = $this->argument('to');
+        $phone = $this->argument('phone');
         $message = $this->argument('message');
         $session = $this->option('session');
 
-        $this->info("Enviando mensagem para {$to}...");
+        $this->info("Enviando mensagem para {$phone}...");
 
         try {
-            $result = $this->whatsapp->sendText($to, $message, $session);
+            $result = $this->whatsapp->sendMessage($session, $phone, $message);
             
             if ($result) {
                 $this->info("Mensagem enviada com sucesso!");
-                return 0;
-            } else {
-                $this->error("Não foi possível enviar a mensagem.");
-                return 1;
+                return self::SUCCESS;
             }
+
+            $this->error("Não foi possível enviar a mensagem.");
+            return self::FAILURE;
         } catch (\Exception $e) {
             $this->error("Erro ao enviar mensagem: " . $e->getMessage());
-            return 1;
+            return self::FAILURE;
         }
     }
 } 

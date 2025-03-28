@@ -16,10 +16,8 @@ class LaravelWhatsAppServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         // Publicar configuração
         $this->publishes([
@@ -65,10 +63,8 @@ class LaravelWhatsAppServiceProvider extends ServiceProvider
 
     /**
      * Register any application services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         // Mesclar configurações
         $this->mergeConfigFrom(
@@ -112,10 +108,8 @@ class LaravelWhatsAppServiceProvider extends ServiceProvider
 
     /**
      * Obter os serviços fornecidos pelo provedor.
-     *
-     * @return array
      */
-    public function provides()
+    public function provides(): array
     {
         return [
             WhatsAppService::class,
