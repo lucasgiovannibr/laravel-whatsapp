@@ -5,6 +5,7 @@ namespace LucasGiovanni\LaravelWhatsApp;
 use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppQrCodeCommand;
 use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppSendMessageCommand;
 use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppSessionsCommand;
+use LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient;
 use LucasGiovanni\LaravelWhatsApp\Middleware\CorrelationIdMiddleware;
 use LucasGiovanni\LaravelWhatsApp\Services\CircuitBreakerService;
 use LucasGiovanni\LaravelWhatsApp\Services\RefreshTokenService;
@@ -82,6 +83,9 @@ class LaravelWhatsAppServiceProvider extends ServiceProvider
             );
         });
 
+        // Registrar a implementação do WhatsAppClient
+        $this->app->bind(WhatsAppClient::class, WhatsAppService::class);
+
         // Registro de serviços adicionais
         $this->app->singleton(CircuitBreakerService::class, function ($app) {
             return new CircuitBreakerService(
@@ -115,6 +119,7 @@ class LaravelWhatsAppServiceProvider extends ServiceProvider
     {
         return [
             WhatsAppService::class,
+            WhatsAppClient::class,
             CircuitBreakerService::class,
             TransactionService::class,
             RefreshTokenService::class,
