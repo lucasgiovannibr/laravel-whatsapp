@@ -2,8 +2,9 @@
 
 namespace LucasGiovanni\LaravelWhatsApp;
 
-use LucasGiovanni\LaravelWhatsApp\Commands\CleanupTransactionsCommand;
-use LucasGiovanni\LaravelWhatsApp\Commands\WebhookSetupCommand;
+use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppQrCodeCommand;
+use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppSendMessageCommand;
+use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppSessionsCommand;
 use LucasGiovanni\LaravelWhatsApp\Middleware\CorrelationIdMiddleware;
 use LucasGiovanni\LaravelWhatsApp\Services\CircuitBreakerService;
 use LucasGiovanni\LaravelWhatsApp\Services\RefreshTokenService;
@@ -55,8 +56,9 @@ class LaravelWhatsAppServiceProvider extends ServiceProvider
         // Registrar comandos
         if ($this->app->runningInConsole()) {
             $this->commands([
-                WebhookSetupCommand::class,
-                CleanupTransactionsCommand::class,
+                WhatsAppQrCodeCommand::class,
+                WhatsAppSendMessageCommand::class,
+                WhatsAppSessionsCommand::class,
             ]);
         }
     }
