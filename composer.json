@@ -3,11 +3,11 @@
     "description": "Integração Laravel com API WhatsApp",
     "type": "library",
     "license": "MIT",
-    "version": "1.4.6",
+    "version": "1.0.0",
     "authors": [
         {
             "name": "LucasGiovanni",
-            "email": "dev@lucasgiovanni.com"
+            "email": "contato@lucasgiovanni.com.br"
         }
     ],
     "require": {
