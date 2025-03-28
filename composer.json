@@ -3,7 +3,7 @@
     "description": "Integração Laravel com API WhatsApp",
     "type": "library",
     "license": "MIT",
-    "version": "1.4.3",
+    "version": "1.4.4",
     "authors": [
         {
             "name": "LucasGiovanni",

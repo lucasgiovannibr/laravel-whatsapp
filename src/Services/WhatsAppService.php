@@ -531,7 +531,7 @@ class WhatsAppService implements WhatsAppClient
      * @return array Resposta da API
      * @throws WhatsAppException
      */
-    protected function sendMedia(string $to, string $mediaUrl, string $mediaType, ?string $caption = null, ?string $sessionId = null): array
+    public function sendMedia(string $to, string $mediaUrl, string $mediaType, ?string $caption = null, ?string $sessionId = null): array
     {
         try {
             // Verificar se é um caminho de arquivo ou URL
