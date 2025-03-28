@@ -1097,4 +1097,87 @@ class WhatsAppService implements WhatsAppClient
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
+
+    /**
+     * Enviar um vídeo
+     *
+     * @param string $to Número de telefone no formato internacional
+     * @param string $url URL do vídeo
+     * @param string|null $caption Legenda do vídeo
+     * @param string|null $session ID da sessão WhatsApp
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function sendVideo(string $to, string $url, ?string $caption = null, ?string $session = null): array
+    {
+        return $this->sendMedia($to, $url, 'video', $caption, $session);
+    }
+
+    /**
+     * Registrar um webhook
+     *
+     * @param string $url URL do webhook
+     * @param array $events Lista de eventos para assinar
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function registerWebhook(string $url, array $events = []): array
+    {
+        try {
+            $response = $this->http->post('/api/webhooks', [
+                'url' => $url,
+                'events' => $events,
+            ]);
+
+            $this->checkResponse($response, 'Erro ao registrar webhook');
+
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao registrar webhook');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Listar todos os webhooks registrados
+     *
+     * @return array Lista de webhooks
+     * @throws WhatsAppException
+     */
+    public function listWebhooks(): array
+    {
+        try {
+            $response = $this->http->get('/api/webhooks');
+
+            $this->checkResponse($response, 'Erro ao listar webhooks');
+
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao listar webhooks');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Remover um webhook
+     *
+     * @param string $url URL do webhook a ser removido
+     * @return array Resposta da API
+     * @throws WhatsAppException
+     */
+    public function removeWebhook(string $url): array
+    {
+        try {
+            $response = $this->http->delete('/api/webhooks', [
+                'url' => $url,
+            ]);
+
+            $this->checkResponse($response, 'Erro ao remover webhook');
+
+            return $response->json();
+        } catch (\Exception $e) {
+            $this->handleException($e, 'Erro ao remover webhook');
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
 } 
