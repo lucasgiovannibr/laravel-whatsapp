@@ -754,19 +754,19 @@ class WhatsAppService implements WhatsAppClient
      *
      * @param string $to Número de telefone no formato internacional
      * @param string $catalogId ID do catálogo
-     * @param array $productItems Lista de IDs de produtos
-     * @param string|null $sessionId ID da sessão WhatsApp (opcional)
+     * @param array|null $productIds Lista de IDs de produtos
+     * @param string|null $session ID da sessão WhatsApp (opcional)
      * @return array Resposta da API
      * @throws WhatsAppException
      */
-    public function sendCatalog(string $to, string $catalogId, array $productItems = [], ?string $sessionId = null): array
+    public function sendCatalog(string $to, string $catalogId, ?array $productIds = null, ?string $session = null): array
     {
         try {
             $response = $this->http->post('/laravel/send-catalog', [
-                'sessionId' => $sessionId ?? $this->defaultSession,
+                'sessionId' => $session ?? $this->defaultSession,
                 'to' => $this->formatPhoneNumber($to),
                 'catalogId' => $catalogId,
-                'productItems' => $productItems,
+                'productItems' => $productIds ?? [],
             ]);
 
             $this->checkResponse($response, 'Erro ao enviar catálogo');
