@@ -1,8 +1,8 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Notifications\Channels;
+namespace LucasGiovanni\LaravelWhatsApp\Notifications\Channels;
 
-use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
+use LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
@@ -109,7 +109,7 @@ class WhatsAppChannel
      */
     protected function sendTemplate(string $to, string $template, array $data = [], ?string $session = null)
     {
-        $templateService = app('DesterroShop\LaravelWhatsApp\Services\TemplateService');
+        $templateService = app('LucasGiovanni\LaravelWhatsApp\Services\TemplateService');
         $message = $templateService->renderTemplate($template, $data);
 
         return $this->whatsapp->sendText($to, $message, $session);

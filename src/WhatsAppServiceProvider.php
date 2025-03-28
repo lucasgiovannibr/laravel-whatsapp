@@ -1,16 +1,16 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp;
+namespace LucasGiovanni\LaravelWhatsApp;
 
-use DesterroShop\LaravelWhatsApp\Console\Commands\WhatsAppSessionsCommand;
-use DesterroShop\LaravelWhatsApp\Console\Commands\WhatsAppSendMessageCommand;
-use DesterroShop\LaravelWhatsApp\Console\Commands\WhatsAppQrCodeCommand;
-use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
-use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
-use DesterroShop\LaravelWhatsApp\Http\Middleware\WhatsAppWebhookMiddleware;
-use DesterroShop\LaravelWhatsApp\Services\WhatsAppService;
-use DesterroShop\LaravelWhatsApp\Services\TemplateService;
-use DesterroShop\LaravelWhatsApp\Notifications\Channels\WhatsAppChannel;
+use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppSessionsCommand;
+use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppSendMessageCommand;
+use LucasGiovanni\LaravelWhatsApp\Console\Commands\WhatsAppQrCodeCommand;
+use LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient;
+use LucasGiovanni\LaravelWhatsApp\Facades\WhatsApp;
+use LucasGiovanni\LaravelWhatsApp\Http\Middleware\WhatsAppWebhookMiddleware;
+use LucasGiovanni\LaravelWhatsApp\Services\WhatsAppService;
+use LucasGiovanni\LaravelWhatsApp\Services\TemplateService;
+use LucasGiovanni\LaravelWhatsApp\Notifications\Channels\WhatsAppChannel;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;

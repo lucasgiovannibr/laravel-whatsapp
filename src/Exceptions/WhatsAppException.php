@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Exceptions;
+namespace LucasGiovanni\LaravelWhatsApp\Exceptions;
 
 use Exception;
 

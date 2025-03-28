@@ -1,13 +1,13 @@
 # Próximos Passos para Integração WhatsApp com Laravel
 
-Este documento contém instruções sobre como implementar e configurar a integração entre o Laravel e a API DesterroShop WhatsApp.
+Este documento contém instruções sobre como implementar e configurar a integração entre o Laravel e a API WhatsApp.
 
 ## 1. Instalação do Pacote
 
 Execute o comando abaixo para instalar o pacote via Composer:
 
 ```bash
-composer require desterroshop/laravel-whatsapp
+composer require lucasgiovanni/laravel-whatsapp
 ```
 
 ## 2. Publicação dos Arquivos de Configuração
@@ -15,7 +15,7 @@ composer require desterroshop/laravel-whatsapp
 Publique os arquivos de configuração e assets:
 
 ```bash
-php artisan vendor:publish --provider="DesterroShop\LaravelWhatsApp\WhatsAppServiceProvider"
+php artisan vendor:publish --provider="LucasGiovanni\LaravelWhatsApp\WhatsAppServiceProvider"
 ```
 
 ## 3. Configuração das Variáveis de Ambiente
@@ -38,14 +38,14 @@ Configure o webhook para receber mensagens do WhatsApp:
 ```php
 Route::post('/webhook/whatsapp', function () {
     return response()->json(['status' => 'success']);
-})->middleware(\DesterroShop\LaravelWhatsApp\Http\Middleware\WhatsAppWebhookMiddleware::class);
+})->middleware(\LucasGiovanni\LaravelWhatsApp\Http\Middleware\WhatsAppWebhookMiddleware::class);
 ```
 
 2. Configure a URL do webhook no seu servidor WhatsApp:
 
 ```php
 // Em AppServiceProvider ou outro local apropriado
-\DesterroShop\LaravelWhatsApp\Facades\WhatsApp::setWebhook(
+\LucasGiovanni\LaravelWhatsApp\Facades\WhatsApp::setWebhook(
     route('api.whatsapp.webhook')
 );
 ```
@@ -55,7 +55,7 @@ Route::post('/webhook/whatsapp', function () {
 ### Enviando Mensagens Simples
 
 ```php
-use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
+use LucasGiovanni\LaravelWhatsApp\Facades\WhatsApp;
 
 // Enviar texto
 WhatsApp::sendText('5548999998888', 'Olá, tudo bem?');
@@ -76,7 +76,7 @@ WhatsApp::createTemplate('boas-vindas', 'Olá {{nome}}, bem-vindo à {{empresa}}
 // Enviar usando o template
 WhatsApp::sendTemplate('5548999998888', 'boas-vindas', [
     'nome' => 'João',
-    'empresa' => 'DesterroShop'
+    'empresa' => 'LucasGiovanni'
 ]);
 ```
 

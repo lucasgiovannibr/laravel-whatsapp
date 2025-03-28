@@ -1,15 +1,15 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Http\Controllers;
+namespace LucasGiovanni\LaravelWhatsApp\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
-use DesterroShop\LaravelWhatsApp\Exceptions\InvalidSignatureException;
-use DesterroShop\LaravelWhatsApp\Events\WhatsAppMessageReceived;
-use DesterroShop\LaravelWhatsApp\Events\WhatsAppSessionEvent;
+use LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient;
+use LucasGiovanni\LaravelWhatsApp\Exceptions\InvalidSignatureException;
+use LucasGiovanni\LaravelWhatsApp\Events\WhatsAppMessageReceived;
+use LucasGiovanni\LaravelWhatsApp\Events\WhatsAppSessionEvent;
 
 class WebhookController extends Controller
 {

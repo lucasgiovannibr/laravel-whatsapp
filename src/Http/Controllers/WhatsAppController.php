@@ -1,8 +1,8 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Http\Controllers;
+namespace LucasGiovanni\LaravelWhatsApp\Http\Controllers;
 
-use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
+use LucasGiovanni\LaravelWhatsApp\Facades\WhatsApp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;

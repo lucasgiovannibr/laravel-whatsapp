@@ -1,14 +1,14 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp;
+namespace LucasGiovanni\LaravelWhatsApp;
 
-use DesterroShop\LaravelWhatsApp\Commands\CleanupTransactionsCommand;
-use DesterroShop\LaravelWhatsApp\Commands\WebhookSetupCommand;
-use DesterroShop\LaravelWhatsApp\Middleware\CorrelationIdMiddleware;
-use DesterroShop\LaravelWhatsApp\Services\CircuitBreakerService;
-use DesterroShop\LaravelWhatsApp\Services\RefreshTokenService;
-use DesterroShop\LaravelWhatsApp\Services\TransactionService;
-use DesterroShop\LaravelWhatsApp\Services\WhatsAppService;
+use LucasGiovanni\LaravelWhatsApp\Commands\CleanupTransactionsCommand;
+use LucasGiovanni\LaravelWhatsApp\Commands\WebhookSetupCommand;
+use LucasGiovanni\LaravelWhatsApp\Middleware\CorrelationIdMiddleware;
+use LucasGiovanni\LaravelWhatsApp\Services\CircuitBreakerService;
+use LucasGiovanni\LaravelWhatsApp\Services\RefreshTokenService;
+use LucasGiovanni\LaravelWhatsApp\Services\TransactionService;
+use LucasGiovanni\LaravelWhatsApp\Services\WhatsAppService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 

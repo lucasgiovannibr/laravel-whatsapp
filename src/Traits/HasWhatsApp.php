@@ -1,8 +1,8 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Traits;
+namespace LucasGiovanni\LaravelWhatsApp\Traits;
 
-use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
+use LucasGiovanni\LaravelWhatsApp\Facades\WhatsApp;
 use Illuminate\Support\Facades\Log;
 
 trait HasWhatsApp

@@ -1,8 +1,8 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Jobs;
+namespace LucasGiovanni\LaravelWhatsApp\Jobs;
 
-use DesterroShop\LaravelWhatsApp\Services\WhatsAppService;
+use LucasGiovanni\LaravelWhatsApp\Services\WhatsAppService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;

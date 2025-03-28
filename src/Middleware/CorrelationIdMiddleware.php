@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Middleware;
+namespace LucasGiovanni\LaravelWhatsApp\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
@@ -59,7 +59,7 @@ class CorrelationIdMiddleware
      * protected $middlewareGroups = [
      *     'api' => [
      *         // ...
-     *         \DesterroShop\LaravelWhatsApp\Middleware\CorrelationIdMiddleware::class,
+     *         \LucasGiovanni\LaravelWhatsApp\Middleware\CorrelationIdMiddleware::class,
      *     ],
      * ];
      */

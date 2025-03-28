@@ -7,13 +7,13 @@ Integração robusta entre Laravel e API WhatsApp Node.js com suporte a recursos
 Instale o pacote via Composer:
 
 ```bash
-composer require desterroshop/laravel-whatsapp
+composer require lucasgiovanni/laravel-whatsapp
 ```
 
 ### Publicar configurações
 
 ```bash
-php artisan vendor:publish --provider="DesterroShop\LaravelWhatsApp\LaravelWhatsAppServiceProvider" --tag="config"
+php artisan vendor:publish --provider="LucasGiovanni\LaravelWhatsApp\LaravelWhatsAppServiceProvider" --tag="config"
 ```
 
 ## Configuração
@@ -33,7 +33,7 @@ WHATSAPP_DEFAULT_SESSION=default
 O pacote oferece um sistema de autenticação com tokens de atualização para manter a segurança e evitar expiração:
 
 ```php
-use DesterroShop\LaravelWhatsApp\Facades\WhatsApp;
+use LucasGiovanni\LaravelWhatsApp\Facades\WhatsApp;
 
 // Autenticar e obter tokens
 $tokens = WhatsApp::authenticate();
@@ -89,7 +89,7 @@ try {
 Proteja seu sistema contra falhas em cascata:
 
 ```php
-use DesterroShop\LaravelWhatsApp\Services\CircuitBreakerService;
+use LucasGiovanni\LaravelWhatsApp\Services\CircuitBreakerService;
 
 // Injetar o serviço
 public function __construct(CircuitBreakerService $circuitBreaker)
@@ -135,7 +135,7 @@ WhatsApp::sendTemplate(
     'boas_vindas',           // Nome do template
     [                        // Dados para o template
         'name' => 'João',
-        'company' => 'DesterroShop'
+        'company' => 'LucasGiovanni'
     ],
     'default'                // ID da sessão (opcional)
 );
@@ -197,7 +197,7 @@ WhatsApp::sendLocation(
     '5548999998888',  // Número do destinatário
     -27.5969,         // Latitude
     -48.5495,         // Longitude
-    'DesterroShop',   // Título (opcional)
+    'LucasGiovanni',   // Título (opcional)
     'default'         // ID da sessão (opcional)
 );
 ```
@@ -440,7 +440,7 @@ class WhatsAppWebhookController extends Controller
 Para processamento assíncrono:
 
 ```php
-use DesterroShop\LaravelWhatsApp\Jobs\ProcessWhatsAppJob;
+use LucasGiovanni\LaravelWhatsApp\Jobs\ProcessWhatsAppJob;
 
 // Agendar envio de mensagem
 ProcessWhatsAppJob::dispatch('send-text', [
@@ -467,7 +467,7 @@ Adicione o middleware no seu `app/Http/Kernel.php`:
 protected $middlewareGroups = [
     'api' => [
         // ...
-        \DesterroShop\LaravelWhatsApp\Middleware\CorrelationIdMiddleware::class,
+        \LucasGiovanni\LaravelWhatsApp\Middleware\CorrelationIdMiddleware::class,
     ],
 ];
 ```
@@ -487,7 +487,7 @@ php artisan whatsapp:cleanup-transactions --older-than=60
 ## Tratamento de Erros
 
 ```php
-use DesterroShop\LaravelWhatsApp\Exceptions\WhatsAppException;
+use LucasGiovanni\LaravelWhatsApp\Exceptions\WhatsAppException;
 
 try {
     WhatsApp::sendText('5548999998888', 'Olá!');

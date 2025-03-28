@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Contracts;
+namespace LucasGiovanni\LaravelWhatsApp\Contracts;
 
 interface WhatsAppClient
 {

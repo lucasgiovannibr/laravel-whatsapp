@@ -1,6 +1,6 @@
 # Tipos de Mensagens Suportados
 
-O pacote DesterroShop Laravel WhatsApp suporta diversos tipos de mensagens para atender às necessidades da sua aplicação. Cada tipo de mensagem possui características específicas e estrutura própria para envio.
+O pacote Laravel WhatsApp suporta diversos tipos de mensagens para atender às necessidades da sua aplicação. Cada tipo de mensagem possui características específicas e estrutura própria para envio.
 
 ## Mensagens de Texto
 

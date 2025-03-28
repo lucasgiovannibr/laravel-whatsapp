@@ -1,8 +1,8 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Console\Commands;
+namespace LucasGiovanni\LaravelWhatsApp\Console\Commands;
 
-use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
+use LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient;
 use Illuminate\Console\Command;
 
 class WhatsAppSendMessageCommand extends Command

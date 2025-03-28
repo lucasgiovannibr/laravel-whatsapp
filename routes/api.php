@@ -1,10 +1,10 @@
 <?php
 
-use DesterroShop\LaravelWhatsApp\Http\Controllers\AuthController;
-use DesterroShop\LaravelWhatsApp\Http\Controllers\CircuitBreakerController;
-use DesterroShop\LaravelWhatsApp\Http\Controllers\TransactionController;
-use DesterroShop\LaravelWhatsApp\Http\Controllers\WebhookController;
-use DesterroShop\LaravelWhatsApp\Http\Controllers\WhatsAppController;
+use LucasGiovanni\LaravelWhatsApp\Http\Controllers\AuthController;
+use LucasGiovanni\LaravelWhatsApp\Http\Controllers\CircuitBreakerController;
+use LucasGiovanni\LaravelWhatsApp\Http\Controllers\TransactionController;
+use LucasGiovanni\LaravelWhatsApp\Http\Controllers\WebhookController;
+use LucasGiovanni\LaravelWhatsApp\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
 /*

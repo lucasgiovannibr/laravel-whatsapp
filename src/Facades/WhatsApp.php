@@ -1,15 +1,15 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Facades;
+namespace LucasGiovanni\LaravelWhatsApp\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static array authenticate(?string $apiKey = null)
  * @method static array refreshToken(string $refreshToken)
- * @method static \DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient withToken(string $token)
- * @method static \DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient withCorrelationId(string $correlationId)
- * @method static \DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient withTransaction(string $transactionId)
+ * @method static \LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient withToken(string $token)
+ * @method static \LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient withCorrelationId(string $correlationId)
+ * @method static \LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient withTransaction(string $transactionId)
  * @method static string beginTransaction()
  * @method static bool commitTransaction(string $transactionId)
  * @method static bool rollbackTransaction(string $transactionId)
@@ -36,7 +36,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static array getLogsByCorrelationId(string $correlationId)
  * @method static array verifySanctumToken(string $sanctumToken)
  * 
- * @see \DesterroShop\LaravelWhatsApp\Services\WhatsAppService
+ * @see \LucasGiovanni\LaravelWhatsApp\Services\WhatsAppService
  */
 class WhatsApp extends Facade
 {

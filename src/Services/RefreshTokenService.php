@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Services;
+namespace LucasGiovanni\LaravelWhatsApp\Services;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -11,14 +11,14 @@ use Illuminate\Support\Str;
 class RefreshTokenService
 {
     /**
-     * @var \DesterroShop\LaravelWhatsApp\Services\WhatsAppService
+     * @var \LucasGiovanni\LaravelWhatsApp\Services\WhatsAppService
      */
     protected $whatsappService;
     
     /**
      * Construtor
      *
-     * @param \DesterroShop\LaravelWhatsApp\Services\WhatsAppService $whatsappService
+     * @param \LucasGiovanni\LaravelWhatsApp\Services\WhatsAppService $whatsappService
      */
     public function __construct(WhatsAppService $whatsappService)
     {

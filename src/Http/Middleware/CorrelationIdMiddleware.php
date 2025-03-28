@@ -1,6 +1,6 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Http\Middleware;
+namespace LucasGiovanni\LaravelWhatsApp\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

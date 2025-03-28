@@ -1,9 +1,9 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Http\Middleware;
+namespace LucasGiovanni\LaravelWhatsApp\Http\Middleware;
 
 use Closure;
-use DesterroShop\LaravelWhatsApp\Events\WhatsAppMessageReceived;
+use LucasGiovanni\LaravelWhatsApp\Events\WhatsAppMessageReceived;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;

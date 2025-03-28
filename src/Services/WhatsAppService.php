@@ -1,9 +1,9 @@
 <?php
 
-namespace DesterroShop\LaravelWhatsApp\Services;
+namespace LucasGiovanni\LaravelWhatsApp\Services;
 
-use DesterroShop\LaravelWhatsApp\Contracts\WhatsAppClient;
-use DesterroShop\LaravelWhatsApp\Exceptions\WhatsAppException;
+use LucasGiovanni\LaravelWhatsApp\Contracts\WhatsAppClient;
+use LucasGiovanni\LaravelWhatsApp\Exceptions\WhatsAppException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
