@@ -85,14 +85,17 @@ class WhatsAppService implements WhatsAppClient
     /**
      * Autenticar e obter token JWT
      *
+     * @param string|null $apiKey
      * @return array Tokens de autenticação
      * @throws WhatsAppException
      */
-    public function authenticate(): array
+    public function authenticate(?string $apiKey = null): array
     {
         try {
+            $apiKey = $apiKey ?? $this->apiKey;
+            
             $response = $this->http->post('/api/auth', [
-                'api_key' => $this->apiKey,
+                'api_key' => $apiKey,
             ]);
 
             $this->checkResponse($response, 'Erro na autenticação');
